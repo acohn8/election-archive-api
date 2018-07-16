@@ -49,8 +49,8 @@ ActiveRecord::Schema.define(version: 2018_07_16_183130) do
     t.integer "total"
     t.integer "candidate_id"
     t.integer "precinct_id"
-    t.integer "state_id"
     t.integer "county_id"
+    t.integer "state_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
