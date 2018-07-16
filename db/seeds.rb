@@ -10,7 +10,7 @@ def create_counties
     county = County.find_or_create_by(name: row['county_name'], fips: row['county_fips'], state: state)
     precinct = Precinct.find_or_create_by(name: row['precinct'], county: county)
     candidate = Candidate.find_or_create_by(name: row['candidate'], party: row['party'], normalized_name: row['candidate_normalized'], writein: row['writein'], fec_id: row['candidate_fec'], google_id: row['candidate_google'], govtrack_id: row['candidate_govtrack'], opensecrets_id: row['candidate_opensecrets'], wikidata_id: row['candidate_wikidata'])
-    Result.create(total: row['votes'], precinct: precinct, candidate: candidate)
+    Result.create(total: row['votes'], state: state, county: county, precinct: precinct, candidate: candidate)
   end
 end
 
