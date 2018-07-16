@@ -1,0 +1,23 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  name: MyString
+  party: MyString
+  normalized_name: MyString
+  writein: false
+  fec_id: MyString
+  google_id: MyString
+  govtrack_id: MyString
+  opensecrets_id: MyString
+  wikidata_id: MyString
+
+two:
+  name: MyString
+  party: MyString
+  normalized_name: MyString
+  writein: false
+  fec_id: MyString
+  google_id: MyString
+  govtrack_id: MyString
+  opensecrets_id: MyString
+  wikidata_id: MyString
