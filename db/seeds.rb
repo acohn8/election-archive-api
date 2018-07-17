@@ -2,7 +2,7 @@ require 'csv'
 
 
 def create_counties
-  data = CSV.open("/Users/adamcohn/Documents/development/projects/election_data/state-level-results/2016-co-precinct.csv", headers: :first_row).map(&:to_h)
+  data = CSV.open("/Users/adamcohn/Documents/development/projects/election_data/state-level-results/2016-wi-precinct.csv", headers: :first_row).map(&:to_h)
   filtered_data = data.select{ |row| row['office'] == 'US President'}
   filtered_data.each do |row|
     puts row
