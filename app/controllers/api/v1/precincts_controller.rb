@@ -2,7 +2,8 @@ module Api
   module V1
     class PrecinctsController < ApplicationController
       def index
-        render json: Precinct.render
+        @state = State.find(params['state_id'])
+        render json: @state.render_precincts
       end
     end
   end

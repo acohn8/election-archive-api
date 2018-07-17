@@ -4,10 +4,12 @@ class County < ApplicationRecord
   has_many :results, through: :precincts
   has_many :candidates, through: :results
 
+  #County.first.results.joins(:candidate).pluck(:party, :normalized_name, :results)
   def self.render
     County.all.map do |county|
       { name: county.name,
-        results:  county.results.joins(:candidate).where(results: { county_id: county.id }).group('candidates.party').sum(:total)
+        fips: county.fips,
+        results:  county.results.includes(:candidate).where(results: { county_id: county.id }).group('candidates.normalized_name').sum(:total)
       }
     end
   end
