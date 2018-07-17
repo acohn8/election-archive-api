@@ -1,2 +1,0 @@
-class CountiesController < ApplicationController
-end
