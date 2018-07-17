@@ -20,7 +20,7 @@ class State < ApplicationRecord
         {
           county_name: county.name,
           county_fips: county.fips,
-          county_results:  county.results.includes(:candidate).where(results: { county_id: county.id }).group('candidates.normalized_name').sum(:total)
+          county_results:  county.results.includes(:candidate).where(results: { county_id: county.id }).group('candidates.party').sum(:total)
         }
       end }
     end
@@ -32,7 +32,7 @@ class State < ApplicationRecord
         precincts.map do |precinct|
           {
             precinct_name: precinct.name,
-            precinct_results:  precinct.results.includes(:candidate).where(results: { precinct_id: precinct.id }).group('candidates.normalized_name').sum(:total)
+            precinct_results:  precinct.results.includes(:candidate).where(results: { precinct_id: precinct.id }).group('candidates.party').sum(:total)
           }
         end }
       end

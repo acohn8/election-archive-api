@@ -9,7 +9,7 @@ class County < ApplicationRecord
     County.all.map do |county|
       { name: county.name,
         fips: county.fips,
-        results:  county.results.includes(:candidate).where(results: { county_id: county.id }).group('candidates.normalized_name').sum(:total)
+        results:  county.results.includes(:candidate).where(results: { county_id: county.id }).group('candidates.party').sum(:total)
       }
     end
   end
