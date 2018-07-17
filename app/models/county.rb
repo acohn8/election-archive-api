@@ -4,37 +4,15 @@ class County < ApplicationRecord
   has_many :results, through: :precincts
   has_many :candidates, through: :results
 
-  #County.first.results.joins(:candidate).pluck(:party, :normalized_name, :results)
   def self.render
     County.all.map do |county|
+      major_candidate_results = county.candidates.group('candidates.normalized_name').limit(5).order('sum_total DESC').sum(:total)
+      major_candidate_totals = major_candidate_results.values.inject(0) { |sum, n| sum + n }
+      major_candidate_results['other'] = county.results.sum(:total) - major_candidate_totals
       { name: county.name,
         fips: county.fips,
-        results:  county.results.includes(:candidate).where(results: { county_id: county.id }).group('candidates.party').sum(:total)
+        results:  [major_candidate_results]
       }
     end
   end
-
-  # def total
-  #   results.sum(:total)
-  # end
-
-  # def dem_total
-  #   results.joins(:candidate).where(results: { county_id: id }, candidates: { fec_id: 'P00003392' }).sum(:total)
-  # end
-
-  # def gop_total
-  #   results.joins(:candidate).where(results: { county_id: id }, candidates: { fec_id: 'P80001571' }).sum(:total)
-  # end
-
-  # def lib_total
-  #   results.joins(:candidate).where(results: { county_id: id }, candidates: { fec_id: 'P60012234' }).sum(:total)
-  # end
-
-  # def green_total
-  #   results.joins(:candidate).where(results: { county_id: id }, candidates: { fec_id: 'P20003984' }).sum(:total)
-  # end
-
-  # def other_total
-  #   total - (dem_total + gop_total + lib_total + green_total)
-  # end
 end
