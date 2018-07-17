@@ -6,19 +6,11 @@ class Precinct < ApplicationRecord
     self.results.sum(:total)
    end
 
-   def candidate_total(id)
-    self.results.where(candidate_id: id).sum(:total)
-   end
-
    def dem_total
-    self.results.where(candidate_id: Candidate.major_dem.id).sum(:total)
-   end
+    self.results.joins(:candidate).where(candidates: { party: 'democratic' }).sum(:total)
+  end
 
-   def gop_total
-    #check this
-    self.results.where(candidate_id: Candidate.major_gop.id).sum(:total)
-   end
-
-   def gop_total
-   end
+  def gop_total
+    self.results.joins(:candidate).where(candidates: { party: 'republican' }).sum(:total)
+  end
 end

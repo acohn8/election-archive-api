@@ -4,7 +4,14 @@ class County < ApplicationRecord
   has_many :results, through: :precincts
 
   def total
-    results = self.results.map { |r| r.total }
-    results.inject(0) { |sum, n| sum + n }
+    self.results.sum(:total)
    end
+
+  def dem_total
+    self.results.joins(:candidate).where(candidates: { party: 'democratic' }).sum(:total)
+  end
+
+  def gop_total
+    self.results.joins(:candidate).where(candidates: { party: 'republican' }).sum(:total)
+  end
 end
