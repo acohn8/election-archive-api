@@ -16,51 +16,53 @@ class State < ApplicationRecord
   end
 
   def render_counties
-     county_data = counties.includes(:candidates)
-     { name: name,
+    counties_with_candidates = counties.includes(:results).includes(:candidates)
+    { name: name,
       fips: fips,
-      counties: county_data.map do |county|
+      counties: counties_with_candidates.to_a.map do |county|
+        results = county.candidates.group('candidates.id').sum(:total)
         {
           county_name: county.name,
           county_fips: county.fips,
-          candidates: county.candidates.distinct.map do |candidate|
+          candidates: county.candidates.uniq.map do |candidate|
             {
             name: candidate.name,
             normalized_name: candidate.normalized_name,
             fec_id: candidate.fec_id,
             party: candidate.party,
-            results: candidate.results.sum(:total)
+            results: results[candidate.id]
             }
           end
       }
-        end
-      }
     end
+  }
+  end
 
   def render_precincts
-    precinct_data = precincts.includes(:candidates)
+    precincts_with_candidates = precincts.includes(:results).includes(:candidates)
     { name: name,
-     precincts: precinct_data.map do |precinct|
-       {
-         precinct_name: precinct.name,
-         candidates: precinct.candidates.distinct.map do |candidate|
-           {
-           name: candidate.name,
-           normalized_name: candidate.normalized_name,
-           fec_id: candidate.fec_id,
-           party: candidate.party,
-           results: candidate.results.sum(:total)
-           }
-         end
-     }
-       end
-     }
+      fips: fips,
+      precincts: precincts_with_candidates.to_a.map do |precinct|
+        results = precinct.candidates.group('candidates.id').sum(:total)
+        {
+          precinct_name: precinct.name,
+          candidates: precinct.candidates.uniq.map do |candidate|
+            {
+            name: candidate.name,
+            normalized_name: candidate.normalized_name,
+            party: candidate.party,
+            results: results[candidate.id]
+            }
+          end
+      }
     end
+  }
+  end
 
   def render_show
     { name: name,
       fips: fips,
-      results:  candidates.map do |candidate|
+      results:  candidates.distinct.map do |candidate|
         {
           name: candidate.name,
           normalized_name: candidate.normalized_name,
@@ -68,7 +70,7 @@ class State < ApplicationRecord
           party: candidate.party,
           results: candidate.results.sum(:total)
         }
-  end
+     end
   }
-end
+  end
 end
