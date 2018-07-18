@@ -4,6 +4,8 @@ class CreateCounties < ActiveRecord::Migration[5.2]
       t.string :name
       t.integer :fips
       t.integer :state_id
+      t.float :latitude
+      t.float :longitude
 
       t.timestamps
     end

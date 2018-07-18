@@ -1,8 +1,8 @@
 class County < ApplicationRecord
   belongs_to :state
-  has_many :precincts
-  has_many :results, through: :precincts
+  has_many :results
   has_many :candidates, through: :results
+  has_many :precincts
 
   def self.render
     County.all.map do |county|
@@ -14,5 +14,9 @@ class County < ApplicationRecord
         results:  [major_candidate_results]
       }
     end
+  end
+
+  def total
+    self.results.sum(:total)
   end
 end
