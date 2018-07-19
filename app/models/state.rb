@@ -20,17 +20,22 @@ class State < ApplicationRecord
     { name: name,
       fips: fips,
       counties: counties_with_candidates.to_a.map do |county|
-        results = county.candidates.group('candidates.id').sum(:total)
+        major_candidate_ids = [18, 14, 10, 12, 16]
+        major_results = county.candidates.where(candidates: {id: major_candidate_ids }).group('candidates.id').sum(:total)
+        countywide_total = county.results.map { |r| r.total }.inject(0) { |sum, n| sum + n }
+        major_results['other'] = countywide_total - major_results.values.inject(0) { |sum, n| sum + n }
+        candidates = county.candidates.uniq.select { |c| major_candidate_ids.include?(c.id) }.to_a.map(&:as_json)
+        candidates.push({id: 'other', name: 'other', normalized_name: 'other', fec_id: 'NA', party: 'other' }.as_json)
         {
           county_name: county.name,
           county_fips: county.fips,
-          candidates: county.candidates.uniq.map do |candidate|
+          candidates: candidates.map do |candidate|
             {
-            name: candidate.name,
-            normalized_name: candidate.normalized_name,
-            fec_id: candidate.fec_id,
-            party: candidate.party,
-            results: results[candidate.id]
+            name: candidate['name'],
+            normalized_name: candidate['normalized_name'],
+            fec_id: candidate['fec_id'],
+            party: candidate['party'],
+            results: major_results[candidate['id']]
             }
           end
       }
@@ -48,11 +53,11 @@ class State < ApplicationRecord
           precinct_name: precinct.name,
           candidates: precinct.candidates.uniq.map do |candidate|
             {
-            name: candidate.name,
-            normalized_name: candidate.normalized_name,
-            party: candidate.party,
-            results: results[candidate.id]
-            }
+            name: candidate['name'],
+            normalized_name: candidate['normalized_name'],
+            party: candidate['party'],
+            results: results['candidate']['id']
+          }
           end
       }
     end
