@@ -16,32 +16,43 @@ class State < ApplicationRecord
   end
 
   def render_counties
-    counties_with_candidates = counties.includes(:results).includes(:candidates)
-    { name: name,
-      fips: fips,
-      counties: counties_with_candidates.to_a.map do |county|
-        major_candidate_ids = [18, 14, 10, 12, 16]
-        major_results = county.candidates.where(candidates: {id: major_candidate_ids }).group('candidates.id').sum(:total)
-        countywide_total = county.results.map { |r| r.total }.inject(0) { |sum, n| sum + n }
-        major_results['other'] = countywide_total - major_results.values.inject(0) { |sum, n| sum + n }
-        candidates = county.candidates.uniq.select { |c| major_candidate_ids.include?(c.id) }.to_a.map(&:as_json)
-        candidates.push({id: 'other', name: 'other', normalized_name: 'other', fec_id: 'NA', party: 'other' }.as_json)
-        {
-          county_name: county.name,
-          county_fips: county.fips,
-          candidates: candidates.map do |candidate|
-            {
-            name: candidate['name'],
-            normalized_name: candidate['normalized_name'],
-            fec_id: candidate['fec_id'],
-            party: candidate['party'],
-            results: major_results[candidate['id']]
-            }
-          end
-      }
+    formatted_hash = []
+    major_results = results.includes(:county, :candidate).where(candidate_id: [18, 14, 10, 12, 16]).order('counties.name').group(['counties.name', 'candidates.normalized_name']).sum(:total)
+    other_results = results.includes(:county, :candidate).where.not(candidate_id: [18, 14, 10, 12, 16]).order('counties.name').group('counties.name').sum(:total)
+    county_results = major_results.reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
+    other_results.each do |county, total|
+      county_results[county] ||= [:other]
+      county_results[county][:other] ||= total
+      formatted_hash << Hash[name: county, results: [county_results[county]]]
     end
-  }
+     {state: name, counties: formatted_hash}
   end
+
+  #   counties_with_candidates = counties.includes(:results).includes(:candidates)
+  #   { name: name,
+  #     fips: fips,
+  #     counties: counties_with_candidates.to_a.map do |county|
+  #       major_candidate_ids = [18, 14, 10, 12, 16]
+  #       major_results = county.candidates.where(candidates: {id: major_candidate_ids }).group('candidates.id').sum(:total)
+  #       countywide_total = county.results.map { |r| r.total }.inject(0) { |sum, n| sum + n }
+  #       major_results['other'] = countywide_total - major_results.values.inject(0) { |sum, n| sum + n }
+  #       candidates = county.candidates.uniq.select { |c| major_candidate_ids.include?(c.id) }.to_a.map(&:as_json)
+  #       candidates.push({id: 'other', name: 'other', normalized_name: 'other', fec_id: 'NA', party: 'other' }.as_json)
+  #       {
+  #         county_name: county.name,
+  #         county_fips: county.fips,
+  #         candidates: candidates.map do |candidate|
+  #           {
+  #           name: candidate['name'],
+  #           normalized_name: candidate['normalized_name'],
+  #           fec_id: candidate['fec_id'],
+  #           party: candidate['party'],
+  #           results: major_results[candidate['id']]
+  #           }
+  #         end
+  #     }
+  #   end
+  # }
 
   def render_precincts
     precincts_with_candidates = precincts.includes(:results).includes(:candidates)
