@@ -17,8 +17,9 @@ class State < ApplicationRecord
 
   def render_counties
     formatted_hash = []
-    major_results = results.includes(:county, :candidate).where(candidate_id: [18, 14, 10, 12, 16]).order('counties.name').group(['counties.name', 'candidates.normalized_name']).sum(:total)
-    other_results = results.includes(:county, :candidate).where.not(candidate_id: [18, 14, 10, 12, 16]).order('counties.name').group('counties.name').sum(:total)
+    candidate_results = results.includes(:county, :candidate)
+    major_results = candidate_results.where(candidate_id: [18, 14, 10, 12, 16]).order('counties.name').group(['counties.name', 'candidates.normalized_name']).sum(:total)
+    other_results = candidate_results.where.not(candidate_id: [18, 14, 10, 12, 16]).order('counties.name').group('counties.name').sum(:total)
     county_results = major_results.reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
     other_results.each do |county, total|
       county_results[county] ||= [:other]
