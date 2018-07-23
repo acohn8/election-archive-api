@@ -4,9 +4,9 @@ Rails.application.routes.draw do
       resources :states do
       resources :counties
       resources :precincts
-    end
-      resources :candidates
       resources :results
+      resources :candidates
+    end
     end
   end
 end

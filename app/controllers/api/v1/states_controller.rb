@@ -6,13 +6,13 @@ module Api
       end
 
       def show
+        @state = State.find(params[:id])
         if params[:id] == 'counties'
-          render json: County.render
+          render json: {counties: @state.counties }
         elsif params[:id] == 'precincts'
           render json: Precinct.render
         else
-          @state = State.find(params[:id])
-          render json: @state.render_show
+          render json: @state
         end
       end
     end
