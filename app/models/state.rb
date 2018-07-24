@@ -24,7 +24,7 @@ class State < ApplicationRecord
     other_results.each do |county, total|
       county_results[county] ||= [:other]
       county_results[county][:other] ||= total
-      formatted_hash <<  Hash[county_id: county, results: [county_results[county]]]
+      formatted_hash <<  Hash[id: county, results: county_results[county]]
     end
      { results: formatted_hash }
   end
