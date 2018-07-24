@@ -2,7 +2,7 @@ module Api
   module V1
     class StatesController < ApplicationController
       def index
-        render json: State.all
+        render json: State.all.order('name')
       end
 
       def show
