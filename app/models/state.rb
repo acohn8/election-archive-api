@@ -30,24 +30,17 @@ class State < ApplicationRecord
   end
 
   def render_precincts
-    precincts_with_candidates = precincts.includes(:results).includes(:candidates)
-    { name: name,
-      fips: fips,
-      precincts: precincts_with_candidates.to_a.map do |precinct|
-        results = precinct.candidates.group('candidates.id').sum(:total)
-        {
-          precinct_name: precinct.name,
-          candidates: precinct.candidates.uniq.map do |candidate|
-            {
-            name: candidate['name'],
-            normalized_name: candidate['normalized_name'],
-            party: candidate['party'],
-            results: results['candidate']['id']
-          }
-          end
-      }
+    formatted_hash = []
+    candidate_results = results.includes(:precinct, :candidate)
+    major_results = candidate_results.where(candidate_id: [14, 10, 16]).order('precincts.id').group(['precincts.id', 'candidates.id']).sum(:total)
+    other_results = candidate_results.where.not(candidate_id: [14, 10, 16]).order('precincts.id').group('precincts.id').sum(:total)
+    precinct_results = major_results.reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
+    other_results.each do |precinct, total|
+      precinct_results[precinct] ||= [:other]
+      precinct_results[precinct][:other] ||= total
+      formatted_hash <<  Hash[id: precinct, county_id: candidate_results.find { |p| p.id == precinct }.county_id, results: precinct_results[precinct]]
     end
-  }
+     { results: formatted_hash }
   end
 
   def render_show
