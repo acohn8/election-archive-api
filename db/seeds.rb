@@ -5,7 +5,11 @@ require 'csv'
 #NH cities
 #AK boroughs
 def seed_state
+<<<<<<< HEAD
   data = CSV.open(File.join(Rails.root, 'db/seed_data/2016-wi-precinct.csv'), headers: :first_row).map(&:to_h)
+=======
+  # data = CSV.open(File.join(Rails.root, 'db/seed_data/2016-nv-precinct.csv'), headers: :first_row).map(&:to_h)
+>>>>>>> added seed csvs
   filtered_data = data.select{ |row| row['office'] == 'US President'}
   filtered_data.each do |row|
     puts "#{row['candidate']}, #{row['county_name']}"
