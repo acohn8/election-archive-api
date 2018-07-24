@@ -5,7 +5,7 @@ require 'csv'
 #NH cities
 #AK boroughs
 def seed_state
-  data = CSV.open("/Users/adamcohn/Documents/development/projects/election_data/precinct-returns/source/2016-nv-precinct.csv", headers: :first_row).map(&:to_h)
+  data = CSV.open("./2016-nv-precinct.csv", headers: :first_row).map(&:to_h)
   filtered_data = data.select{ |row| row['office'] == 'US President'}
   filtered_data.each do |row|
     puts "#{row['candidate']}, #{row['county_name']}"
