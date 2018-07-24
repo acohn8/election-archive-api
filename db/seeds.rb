@@ -2,10 +2,12 @@ require 'csv'
 
 
 #exceptions:
-  #NH cities
-  #AK boroughs
+#NH cities
+#AK boroughs
 def seed_state
-    data = CSV.open("/Users/adamcohn/Documents/development/projects/election_data/precinct-returns/source/2016-nv-precinct.csv", headers: :first_row).map(&:to_h)
+  seed_states = ['co', 'fl', 'ia', 'nv', 'pa', 'va', 'wi']
+  seed_states.each do |state|
+    data = CSV.open("/Users/adamcohn/Documents/development/projects/election_data/precinct-returns/source/2016-#{state}-precinct.csv", headers: :first_row).map(&:to_h)
     filtered_data = data.select{ |row| row['office'] == 'US President'}
     filtered_data.each do |row|
       puts "#{row['candidate']}, #{row['county_name']}"
@@ -14,6 +16,7 @@ def seed_state
       precinct = Precinct.find_or_create_by(name: row['precinct'], county: county)
       candidate = Candidate.find_or_create_by(name: row['candidate'], party: row['party'], normalized_name: row['candidate_normalized'], writein: row['writein'], fec_id: row['candidate_fec'], google_id: row['candidate_google'], govtrack_id: row['candidate_govtrack'], opensecrets_id: row['candidate_opensecrets'], wikidata_id: row['candidate_wikidata'])
       Result.create(total: row['votes'], state: state, county: county, precinct: precinct, candidate: candidate)
+    end
   end
 end
 
