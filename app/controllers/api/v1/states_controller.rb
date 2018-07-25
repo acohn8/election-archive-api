@@ -10,7 +10,8 @@ module Api
         if params[:id] == 'counties'
           render json: {counties: @state.counties }
         elsif params[:id] == 'precincts'
-          render json: Precinct.render
+          byebug
+          render json: { precincts: @state.precincts }
         else
           render json: @state
         end

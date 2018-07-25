@@ -15,7 +15,17 @@ class State < ApplicationRecord
     end
   end
 
-  def render_counties
+  def render_state_results
+    formatted_hash = []
+    top_three = results.includes(:candidate).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..2].map{|k, v| k }
+    candidate_results = results.includes(:candidate)
+    major_results = candidate_results.where(candidate_id: top_three).group('candidates.id').sum(:total)
+    other_results = candidate_results.where.not(candidate_id: top_three).group('candidates.id').sum(:total)
+    major_results[:other] ||= other_results.values.inject(0) { |sum, n| sum + n}
+     { id: id, results: major_results }
+  end
+
+  def render_county_results
     formatted_hash = []
     top_three = results.includes(:candidate).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..2].map{|k, v| k }
     candidate_results = results.includes(:county, :candidate)
@@ -30,7 +40,7 @@ class State < ApplicationRecord
      { results: formatted_hash }
   end
 
-  def render_precincts
+  def render_precint_results
     formatted_hash = []
     candidate_results = results.includes(:precinct, :candidate)
     major_results = candidate_results.where(candidate_id: [14, 10, 16]).order('precincts.id').group(['precincts.id', 'candidates.id']).sum(:total)
