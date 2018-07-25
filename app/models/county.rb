@@ -6,6 +6,7 @@ class County < ApplicationRecord
 
   def render_county_precint_results
     formatted_hash = []
+    county_with_precincts = County.includes(:precincts).where(id: id).distinct
     top_three = results.includes(:candidate).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..2].map{|k, v| k }
     candidate_results = results.includes(:precinct, :candidate)
     major_results = candidate_results.where(candidate_id: top_three).order('precincts.id').group(['precincts.id', 'candidates.id']).sum(:total)
@@ -14,7 +15,7 @@ class County < ApplicationRecord
     other_results.each do |precinct, total|
       precinct_results[precinct] ||= [:other]
       precinct_results[precinct][:other] ||= total
-      formatted_hash <<  Hash[id: id, results: precinct_results[precinct]]
+      formatted_hash <<  Hash[name: county_with_precincts.first.precincts.find { |p| p.id == precinct }.name, results: precinct_results[precinct]]
     end
      { results: formatted_hash }
   end
