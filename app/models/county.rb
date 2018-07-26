@@ -13,10 +13,12 @@ class County < ApplicationRecord
     other_results = candidate_results.where.not(candidate_id: top_three).order('precincts.id').group('precincts.id').sum(:total)
     precinct_results = major_results.reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
     other_results.each do |precinct, total|
-      precinct_results[precinct] ||= [:other]
-      precinct_results[precinct][:other] ||= total
+      unless precinct_results[precinct] == nil
+        precinct_results[precinct] ||= [:other]
+        precinct_results[precinct][:other] ||=  total
+      end
       formatted_hash <<  Hash[name: county_with_precincts.first.precincts.find { |p| p.id == precinct }.name, results: precinct_results[precinct]]
     end
-     { results: formatted_hash }
+    { results: formatted_hash }
   end
 end
