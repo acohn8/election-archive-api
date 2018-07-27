@@ -20,6 +20,7 @@ class State < ApplicationRecord
     candidate_results = results.includes(:candidate)
     major_results = candidate_results.where(candidate_id: top_three).group('candidates.id').sum(:total)
     other_results = candidate_results.where.not(candidate_id: top_three).group('candidates.id').sum(:total)
+    other_results.delete_if { |k, v| !major_results.include?(k) }
     major_results[:other] ||= other_results.values.inject(0) { |sum, n| sum + n}
      { id: id, results: major_results }
   end
@@ -31,6 +32,7 @@ class State < ApplicationRecord
     major_results = candidate_results.where(candidate_id: top_three).order('counties.id').group(['counties.id', 'candidates.id']).sum(:total)
     other_results = candidate_results.where.not(candidate_id: top_three).order('counties.id').group('counties.id').sum(:total)
     county_results = major_results.reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
+    other_results.delete_if { |k, v| !county_results.include?(k) }
     other_results.each do |county, total|
       county_results[county] ||= [:other]
       county_results[county][:other] ||= total
@@ -46,6 +48,7 @@ class State < ApplicationRecord
     major_results = candidate_results.where(candidate_id: top_three).order('precincts.id').group(['precincts.id', 'candidates.id']).sum(:total)
     other_results = candidate_results.where.not(candidate_id: top_three).order('precincts.id').group('precincts.id').sum(:total)
     precinct_results = major_results.reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
+    other_results.delete_if { |k, v| !precinct_results.include?(k) }
     other_results.each do |precinct, total|
       precinct_results[precinct] ||= [:other]
       precinct_results[precinct][:other] ||= total
