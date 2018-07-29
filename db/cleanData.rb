@@ -7,11 +7,12 @@
     result.save
   end
 
-clintons = Candidate.where(normalized_name: 'clinton')
-clintons.each do |clinton|
-  if clinton.id !== 16
-    clinton.results.each do |cr|
-      cr.candidate_id = 16
+steins = Candidate.where(normalized_name: 'stein')
+steins.each do |stein|
+  if stein.id != 18
+    stein.results.each do |cr|
+      cr.candidate_id = 18
       cr.save
     end
   end
+end
