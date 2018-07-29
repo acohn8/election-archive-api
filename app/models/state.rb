@@ -33,10 +33,10 @@ class State < ApplicationRecord
     other_results = candidate_results.where.not(candidate_id: top_three).order('counties.id').group('counties.id').sum(:total)
     county_results = major_results.reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
     other_results.delete_if { |k, v| !county_results.include?(k) }
-    other_results.each do |county, total|
-      county_results[county] ||= [:other]
-      county_results[county][:other] ||= total
-      formatted_hash <<  Hash[id: county, results: county_results[county]]
+    county_results.keys.each do |county_id|
+      county_results[county_id] ||= [:other]
+      county_results[county_id][:other] ||= other_results[county_id].to_i
+      formatted_hash <<  Hash[id: county_id, results: county_results[county_id]]
     end
      { results: formatted_hash }
   end
@@ -49,10 +49,10 @@ class State < ApplicationRecord
     other_results = candidate_results.where.not(candidate_id: top_three).order('precincts.id').group('precincts.id').sum(:total)
     precinct_results = major_results.reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
     other_results.delete_if { |k, v| !precinct_results.include?(k) }
-    other_results.each do |precinct, total|
-      precinct_results[precinct] ||= [:other]
-      precinct_results[precinct][:other] ||= total
-      formatted_hash <<  Hash[id: precinct, county_id: candidate_results.find { |p| p.id == precinct }.county_id, results: precinct_results[precinct]]
+    precinct_results.keys.each do |precinct_id|
+      precinct_results[precinct_id] ||= [:other]
+      precinct_results[precinct_id][:other] ||= other_results[precinct_id].to_i
+      formatted_hash <<  Hash[id: precinct_id, county_id: candidate_results.find { |p| p.precinct_id == precinct_id }.county_id, results: precinct_results[precinct_id]]
     end
      { results: formatted_hash }
   end
@@ -70,5 +70,9 @@ class State < ApplicationRecord
         }
      end
   }
+  end
+
+  def export_county_results
+    
   end
 end

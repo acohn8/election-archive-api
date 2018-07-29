@@ -2,22 +2,23 @@ require 'csv'
 
 
 #exceptions:
-#NH cities
 #AK boroughs
 #AL Party-line voting appears in the data as office values of Straight Party and candidate values of, for example, Alabama Republican Party. To calculate vote totals, sum the votes candidates' received on their own lines and from party-line voting.
-#DC writein
-#GA broken
-#HI broken
+#ME broken
+#reload nh
 
-#add precinct column to state
+#candidate fix
 
-#find by race/close spellings
+#NM
+
+#fixes: normalize candidates
+#SD county has new FIPS and name
+#RI has weird non-geospecific totals to remove
+#HI Kalawao county does not admin elections, but needs a dummy line in the db with a fips of 15005 and a dummy result
+
 
 def seed_state
-  # data = CSV.open(File.join(Rails.root, 'db/seed_data/2016-wi-precinct.csv'), headers: :first_row).map(&:to_h)
-  states = ['md', 'ne', 'nj', 'nm']
-  states.each do |state|
-    data = CSV.open("/Users/adamcohn/Documents/development/projects/election_data/precinct-returns/source/2016-#{state}-precinct.csv", headers: :first_row).map(&:to_h)
+    data = CSV.open("/Users/adamcohn/Documents/development/projects/election_data/precinct-returns/source/2016-nm-precinct.csv", headers: :first_row).map(&:to_h)
     filtered_data = data.select{ |row| row['office'] == 'US President'}
     filtered_data.each do |row|
       puts "#{row['candidate']}, #{row['county_name']}"
@@ -26,7 +27,6 @@ def seed_state
       precinct = Precinct.find_or_create_by(name: row['precinct'], county: county)
       candidate = Candidate.find_or_create_by(normalized_name: row['candidate_normalized'], fec_id: row['candidate_fec'])
       Result.create(total: row['votes'], state: state, county: county, precinct: precinct, candidate: candidate)
-    end
   end
 end
 
