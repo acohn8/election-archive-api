@@ -69,3 +69,35 @@ def delete_stray_candidates
     candidate.save
   end
 end
+
+def delete_nh
+  nh = State.find(5)
+  nh.counties.each do |county|
+    county.delete
+    county.save
+  end
+  nh.precincts.each do |precinct|
+    precinct.delete
+    precinct.save
+  end
+  nh.results.each do |result|
+    result.delete
+    result.save
+  end
+end
+
+def delete_ak
+  ak = State.find(17)
+  ak.counties.each do |county|
+    county.delete
+    county.save
+  end
+  ak.precincts.each do |precinct|
+    precinct.delete
+    precinct.save
+  end
+  ak.results.each do |result|
+    result.delete
+    result.save
+  end
+end
