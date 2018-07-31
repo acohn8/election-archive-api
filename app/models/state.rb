@@ -79,22 +79,15 @@ class State < ApplicationRecord
     major_results = candidate_results.where(candidate_id: top_three).order('counties.id').group(['counties.id', 'candidates.id']).sum(:total)
     other_results = candidate_results.where.not(candidate_id: top_three).order('counties.id').group('counties.id').sum(:total)
     county_results = major_results.reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
+    state_counties = counties.distinct.to_a
+    state_candidates = candidates.distinct.to_a
     other_results.delete_if { |k, v| !county_results.include?(k) }
-    candidates =  Candidate.find(top_three).to_a
-    county_results.keys.each do |county_id|
-      county_hash = {}
-      county = candidate_results.find { |r| r.county_id == county_id }.county
-      county_hash[:county] ||= county.name
-      county_hash[:fips] ||= county.fips.to_s.rjust(5, '0')
-
-      candidate_hash = county_results[county_id].transform_keys { |k| candidates.find { |c| c.id == k }.name }
-      candidate_hash ||= [:other]
-      candidate_hash[:other] ||= other_results[county_id].to_i
-
-      export_hash = county_hash.merge(candidate_hash)
-      formatted_hash <<  export_hash
+    county_results.keys.each do |id|
+      county = state_counties.find{ |c| c.id == id }
+      candidate_totals = county_results[id].transform_keys { |k| candidates.find { |c| c.id == k }.name }
+      result = { county: county.name, fips: county.fips }.merge(candidate_totals)
+      formatted_hash << result
     end
-
     export = generated_csv = CSV.generate do |csv|
       csv << formatted_hash.first.keys
       formatted_hash.each do |county|
