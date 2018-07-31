@@ -21,14 +21,17 @@ module Api
         end
       end
 
-      def export
+      def county_export
         @state = State.find(params[:state_id])
-        generated_csv = CSV.generate do |csv|
-          csv << @state.attributes.keys
-          csv << @state.attributes.values
-        end
         respond_to do |format|
-          format.csv { send_data generated_csv }
+          format.csv { send_data @state.county_results_export, filename: "#{@state.name.downcase}-county-results-2016.csv" }
+        end
+      end
+
+      def precinct_export
+        @state = State.find(params[:state_id])
+        respond_to do |format|
+          format.csv { send_data @state.precinct_results_export, filename: "#{@state.name.downcase}-precinct-results-2016.csv" }
         end
       end
     end

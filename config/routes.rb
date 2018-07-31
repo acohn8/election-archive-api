@@ -7,7 +7,8 @@ Rails.application.routes.draw do
         resources :results
         resources :candidates
       end
-      get 'results/export/:state_id', to: 'results#export'
+      get 'results/export/county/:state_id', to: 'results#county_export'
+      get 'results/export/precinct/:state_id', to: 'results#precinct_export'
     end
   end
 end

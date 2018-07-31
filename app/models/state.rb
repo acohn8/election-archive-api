@@ -72,7 +72,66 @@ class State < ApplicationRecord
   }
   end
 
-  def export_county_results
-    
+  def county_results_export
+    formatted_hash = []
+    top_three = results.includes(:candidate).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..2].map{|k, v| k }
+    candidate_results = results.includes(:county, :candidate)
+    major_results = candidate_results.where(candidate_id: top_three).order('counties.id').group(['counties.id', 'candidates.id']).sum(:total)
+    other_results = candidate_results.where.not(candidate_id: top_three).order('counties.id').group('counties.id').sum(:total)
+    county_results = major_results.reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
+    other_results.delete_if { |k, v| !county_results.include?(k) }
+    candidates =  Candidate.find(top_three).to_a
+    county_results.keys.each do |county_id|
+      county_hash = {}
+      county = candidate_results.find { |r| r.county_id == county_id }.county
+      county_hash[:county] ||= county.name
+      county_hash[:fips] ||= county.fips.to_s.rjust(5, '0')
+
+      candidate_hash = county_results[county_id].transform_keys { |k| candidates.find { |c| c.id == k }.name }
+      candidate_hash ||= [:other]
+      candidate_hash[:other] ||= other_results[county_id].to_i
+
+      export_hash = county_hash.merge(candidate_hash)
+      formatted_hash <<  export_hash
+    end
+
+    export = generated_csv = CSV.generate do |csv|
+      csv << formatted_hash.first.keys
+      formatted_hash.each do |county|
+        csv << county.values
+      end
+    end
+    export
+  end
+
+    def precinct_results_export
+    formatted_hash = []
+    top_three = results.includes(:candidate).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..2].map{|k, v| k }
+    candidate_results = results.includes(:precinct, :candidate)
+    major_results = candidate_results.where(candidate_id: top_three).order('precincts.id').group(['precincts.id', 'candidates.id']).sum(:total)
+    other_results = candidate_results.where.not(candidate_id: top_three).order('precincts.id').group('precincts.id').sum(:total)
+    precinct_results = major_results.reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
+    other_results.delete_if { |k, v| !precinct_results.include?(k) }
+    precinct_results.keys.each do |precinct_id|
+      precinct_hash = {}
+      precinct = candidate_results.find { |r| r.precinct_id == precinct_id }.precinct
+      precinct_hash[:precinct] ||= precinct.name
+      # precinct_hash[:fips] ||= precinct.fips.to_s.rjust(5, '0')
+
+      candidate_hash = precinct_results[precinct_id].transform_keys { |k| candidates.find { |c| c.id == k }.name }
+      candidate_hash ||= [:other]
+      candidate_hash[:other] ||= other_results[precinct_id].to_i
+
+      export_hash = precinct_hash.merge(candidate_hash)
+      formatted_hash <<  export_hash
+    end
+
+    export = generated_csv = CSV.generate do |csv|
+      csv << formatted_hash.first.keys
+      formatted_hash.each do |county|
+        csv << county.values
+      end
+    end
+    export
   end
 end

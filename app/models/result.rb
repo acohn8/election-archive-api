@@ -17,4 +17,6 @@ class Result < ApplicationRecord
     end
      { county_results: formatted_hash }
   end
+
+
 end
