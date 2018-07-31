@@ -1,3 +1,5 @@
+require 'csv'
+
 module Api
   module V1
     class ResultsController < ApplicationController
@@ -16,6 +18,17 @@ module Api
           render json: @county.render_county_precint_results
         elsif params[:id].split(' ').length == 1 && params[:id] =='precinct'
           render json: @state.render_state_precint_results
+        end
+      end
+
+      def export
+        @state = State.find(params[:state_id])
+        generated_csv = CSV.generate do |csv|
+          csv << @state.attributes.keys
+          csv << @state.attributes.values
+        end
+        respond_to do |format|
+          format.csv { send_data generated_csv }
         end
       end
     end
