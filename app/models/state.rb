@@ -84,11 +84,11 @@ class State < ApplicationRecord
     other_results.delete_if { |k, v| !county_results.include?(k) }
     county_results.keys.each do |id|
       county = state_counties.find{ |c| c.id == id }
-      candidate_totals = county_results[id].transform_keys { |k| candidates.find { |c| c.id == k }.name }
+      candidate_totals = county_results[id].transform_keys { |k| state_candidates.find { |c| c.id == k }.name }
       result = { county: county.name, fips: county.fips }.merge(candidate_totals)
       formatted_hash << result
     end
-    export = generated_csv = CSV.generate do |csv|
+    export = CSV.generate do |csv|
       csv << formatted_hash.first.keys
       formatted_hash.each do |county|
         csv << county.values
