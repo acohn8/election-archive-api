@@ -82,9 +82,10 @@ class State < ApplicationRecord
     state_counties = counties.distinct.to_a
     state_candidates = candidates.distinct.to_a
     other_results.delete_if { |k, v| !county_results.include?(k) }
-    county_results.keys.each do |id|
-      county = state_counties.find{ |c| c.id == id }
-      candidate_totals = county_results[id].transform_keys { |k| state_candidates.find { |c| c.id == k }.name }
+    county_results.keys.each do |county_id|
+      county = state_counties.find{ |c| c.id == county_id }
+      candidate_totals = county_results[county_id].transform_keys { |k| state_candidates.find { |c| c.id == k }.name }
+      candidate_totals[:other] ||= other_results[county_id]
       result = { county: county.name, fips: county.fips }.merge(candidate_totals)
       formatted_hash << result
     end
@@ -104,19 +105,17 @@ class State < ApplicationRecord
     major_results = candidate_results.where(candidate_id: top_three).order('precincts.id').group(['precincts.id', 'candidates.id']).sum(:total)
     other_results = candidate_results.where.not(candidate_id: top_three).order('precincts.id').group('precincts.id').sum(:total)
     precinct_results = major_results.reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
+    state_counties = counties.distinct.to_a
+    state_candidates = candidates.distinct.to_a
+    state_precincts = precincts.distinct.to_a
     other_results.delete_if { |k, v| !precinct_results.include?(k) }
     precinct_results.keys.each do |precinct_id|
-      precinct_hash = {}
-      precinct = candidate_results.find { |r| r.precinct_id == precinct_id }.precinct
-      precinct_hash[:precinct] ||= precinct.name
-      # precinct_hash[:fips] ||= precinct.fips.to_s.rjust(5, '0')
-
-      candidate_hash = precinct_results[precinct_id].transform_keys { |k| candidates.find { |c| c.id == k }.name }
-      candidate_hash ||= [:other]
-      candidate_hash[:other] ||= other_results[precinct_id].to_i
-
-      export_hash = precinct_hash.merge(candidate_hash)
-      formatted_hash <<  export_hash
+      precinct = state_precincts.find { |p| p.id == precinct_id }
+      county = state_counties.find { |c| c.id == precinct.county_id}
+      candidate_totals = precinct_results[precinct_id].transform_keys { |k| state_candidates.find { |c| c.id == k }.name }
+      candidate_totals[:other] ||= other_results[precinct_id]
+      result = { precinct: precinct.name, precinct_county: county.name, county_fips: county.fips }.merge(candidate_totals)
+      formatted_hash << result
     end
 
     export = generated_csv = CSV.generate do |csv|
