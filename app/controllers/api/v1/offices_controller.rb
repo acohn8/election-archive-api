@@ -10,6 +10,10 @@ module Api
         @office = Office.find(params['id'])
         render json: @office
       end
+
+      def all_offices
+        render json: Office.all.distinct
+      end
     end
   end
 end
