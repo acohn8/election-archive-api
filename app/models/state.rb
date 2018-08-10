@@ -16,9 +16,9 @@ class State < ApplicationRecord
       end
     end
 
-    def render_state_results
-      top_three = results.includes(:candidate).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..2].map{|k, v| k }
-      candidate_results = results.includes(:candidate)
+    def render_state_results(office)
+      top_three = results.includes(:candidate).where(candidates: { office_id: office.id }).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..2].map{|k, v| k }
+      candidate_results = results.includes(:candidate).where(candidates: { office_id: office.id })
       major_results = candidate_results.where(candidate_id: top_three).group('candidates.id').sum(:total)
       other_results = candidate_results.where.not(candidate_id: top_three).group('candidates.id').sum(:total)
       other_results.delete_if { |k, v| !major_results.include?(k) }
@@ -26,10 +26,10 @@ class State < ApplicationRecord
       { id: id, results: major_results }
     end
 
-    def render_state_county_results
+    def render_state_county_results(office)
       formatted_hash = []
-      top_three = results.includes(:candidate).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..2].map{|k, v| k }
-      candidate_results = results.includes(:county, :candidate)
+      top_three = results.includes(:candidate).where(candidates: { office_id: office.id }).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..2].map{|k, v| k }
+      candidate_results = results.includes(:county, :candidate).where(candidates: {office_id: office.id})
       major_results = candidate_results.where(candidate_id: top_three).order('counties.id').group(['counties.id', 'candidates.id']).sum(:total)
       other_results = candidate_results.where.not(candidate_id: top_three).order('counties.id').group('counties.id').sum(:total)
       county_results = major_results.reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
@@ -42,10 +42,10 @@ class State < ApplicationRecord
       { results: formatted_hash }
     end
 
-    def render_state_precint_results
+    def render_state_precint_results(office)
       formatted_hash = []
-      top_three = results.includes(:candidate).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..2].map{|k, v| k }
-      candidate_results = results.includes(:precinct, :candidate)
+      top_three = results.includes(:candidate).where(candidates: {office_id: office.id}).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..2].map{|k, v| k }
+      candidate_results = results.includes(:county, :candidate).where(candidates: {office_id: office.id})
       major_results = candidate_results.where(candidate_id: top_three).order('precincts.id').group(['precincts.id', 'candidates.id']).sum(:total)
       other_results = candidate_results.where.not(candidate_id: top_three).order('precincts.id').group('precincts.id').sum(:total)
       precinct_results = major_results.reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}

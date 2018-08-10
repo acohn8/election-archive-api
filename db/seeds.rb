@@ -17,19 +17,20 @@ require 'csv'
 #HI Kalawao county does not admin elections, but needs a dummy line in the db with a fips of 15005 and a dummy result
 
 
-# def seed_state
-#     data = CSV.open("/Users/adamcohn/Documents/development/projects/election_data/precinct-returns/source/2016-ak-precinct.csv", headers: :first_row, encoding: 'iso-8859-1:utf-8').map(&:to_h)
-#     filtered_data = data.select{ |row| row['office'] == 'US President'}
-#     filtered_data.each do |row|
-#       puts "#{row['candidate']}, #{row['county_name']}"
-#       state = State.find_or_create_by(name: row['state'], short_name: row['state_postal'], fips: row['state_fips'])
-#       county = County.find_or_create_by(name: row['county_name'], fips: row['county_fips'], latitude: row['county_lat'], longitude: row['county_long'], state: state)
-#       precinct = Precinct.find_or_create_by(name: row['precinct'], county: county)
-#       candidate = Candidate.find_or_create_by(normalized_name: row['candidate_normalized'], fec_id: row['candidate_fec'])
-#       Result.create(total: row['votes'], state: state, county: county, precinct: precinct, candidate: candidate)
-#   end
-# end
-# seed_state
+def seed_state
+    data = CSV.open("/Users/adamcohn/Documents/development/projects/election_data/precinct-returns/source/2016-pa-precinct.csv", headers: :first_row, encoding: 'iso-8859-1:utf-8').map(&:to_h)
+    filtered_data = data.select{ |row| row['office'] == 'US Senate'}
+    filtered_data.each do |row|
+      puts "#{row['candidate']}, #{row['county_name']}"
+      state = State.find_or_create_by(name: row['state'], short_name: row['state_postal'], fips: row['state_fips'])
+      senate = Office.find_or_create_by(name: 'us_senate', district: 'statewide')
+      county = County.find_or_create_by(name: row['county_name'], fips: row['county_fips'], latitude: row['county_lat'], longitude: row['county_long'], state: state)
+      precinct = Precinct.find_or_create_by(name: row['precinct'], county: county)
+      candidate = Candidate.find_or_create_by(name: row['candidate'], party: row['party'], normalized_name: row['candidate_normalized'], fec_id: row['candidate_fec'], office: senate)
+      Result.create(total: row['votes'], state: state, county: county, precinct: precinct, candidate: candidate)
+  end
+end
+seed_state
 
 # def export_margins
 #   formatted_hash = []
@@ -133,7 +134,8 @@ require 'csv'
 # def assign_offices
 #   Candidate.all.each do |candidate|
 #     president = Office.find_or_create_by(name: 'president', district: 'national')
-#     president.candidates <<  candidate
+#     candidate.office =  president
+#     candidate.save
 #   end
 # end
 
