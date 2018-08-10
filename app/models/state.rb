@@ -57,21 +57,7 @@ class State < ApplicationRecord
      { results: formatted_hash }
   end
 
-  def render_show
-    { name: name,
-      fips: fips,
-      results:  candidates.distinct.map do |candidate|
-       {
-          name: candidate.name,
-          normalized_name: candidate.normalized_name,
-          fec_id: candidate.fec_id,
-          party: candidate.party,
-          results: candidate.results.sum(:total)
-        }
-     end
-  }
-  end
-
+  #export routes work, but not live
   def county_results_export
     formatted_hash = []
     top_three = results.includes(:candidate).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..2].map{|k, v| k }
