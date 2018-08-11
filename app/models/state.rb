@@ -35,8 +35,10 @@ class State < ApplicationRecord
       county_results = major_results.reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
       other_results.delete_if { |k, v| !county_results.include?(k) }
       county_results.keys.each do |county_id|
-        county_results[county_id] ||= [:other]
-        county_results[county_id][:other] ||= other_results[county_id].to_i
+        if other_results.values.inject(0) { |sum, n| sum + n } > 0
+          county_results[county_id] ||= [:other]
+          county_results[county_id][:other] ||= other_results[county_id].to_i
+        end
         formatted_hash <<  Hash[id: county_id, results: county_results[county_id]]
       end
       { results: formatted_hash }
