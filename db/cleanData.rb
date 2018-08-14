@@ -113,3 +113,13 @@ def delete_ga_sen
     candidate.save
   end
 end
+
+def update_sd_county
+  shannon = County.find_by(fips: 46113)
+  shannon.results.each do |result|
+    result.county_id = 2511
+  end
+  shannon.precincts.each do |precinct|
+    precinct.county_id = 2511
+  end
+end
