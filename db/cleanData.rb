@@ -101,3 +101,15 @@ def delete_ak
     result.save
   end
 end
+
+def delete_ga_sen
+  ga_candidates = State.find(11).candidates.where(office_id: 309)
+  ga_candidates.each do |candidate|
+    candidate.results.each do |result|
+      result.delete
+      result.save
+    end
+    candidate.delete
+    candidate.save
+  end
+end

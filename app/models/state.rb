@@ -39,7 +39,7 @@ class State < ApplicationRecord
           county_results[county_id] ||= [:other]
           county_results[county_id][:other] ||= other_results[county_id].to_i
         end
-        formatted_hash <<  Hash[id: county_id, results: county_results[county_id]]
+        formatted_hash <<  Hash[id: county_id, fips: counties.find { |c| c.id == county_id }.fips.to_s, results: county_results[county_id]]
       end
       { results: formatted_hash }
     end
