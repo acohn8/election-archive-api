@@ -7,7 +7,11 @@ module Api
       def office_candidates
         @state = State.find(params['state_id'])
         @office = Office.find(params['office_id'])
-        render json: @state.candidates.distinct.where(candidates: { office_id: @office.id })
+        if @office.name == 'US President'
+          render json: @state.candidates.distinct.where(candidates: { office_id: @office.id })
+        else
+          render json: {data: [@state.candidate_images(@office)] }
+        end
       end
 
       def state_results

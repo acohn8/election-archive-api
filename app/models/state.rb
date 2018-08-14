@@ -1,3 +1,5 @@
+require 'httparty'
+
 class State < ApplicationRecord
   has_many :counties
   has_many :results
@@ -60,7 +62,28 @@ class State < ApplicationRecord
       { results: formatted_hash }
     end
 
-    #export routes work, but not live
+
+
+    def candidate_images(office)
+      formatted_hash = []
+      to_render = {}
+      top_three = results.includes(:candidate).where(candidates: {office_id: office.id}).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..2].map{|k, v| k }
+      top_candidates = Candidate.find([top_three]).to_a
+      url = "https://en.wikipedia.org/w/api.php?action=query&prop=imageinfo&iiprop=url&generator=images&titles=United States Senate election in #{self.name}, 2016&format=json"
+      response = HTTParty.get(url)
+      data = response['query']['pages']
+      image_keys = data.keys
+      top_candidates.each do |candidate|
+        candidate_info = image_keys.find { |k| data[k]['title'].downcase.include?(candidate.normalized_name) }
+        candidate_image = data[candidate_info]['imageinfo'][0]['url']
+        formatted_hash << { id: candidate.id, type:'candidates', attributes: { name: candidate.name, party: candidate.party, normalized_name: candidate.normalized_name, image: candidate_image } }
+      end
+      # formatted_hash.each { |h| to_render[h] ||= h }
+      # to_render
+      formatted_hash
+    end
+
+    # export routes work, but not live
     def county_results_export
       formatted_hash = []
       top_three = results.includes(:candidate).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..2].map{|k, v| k }
@@ -86,6 +109,7 @@ class State < ApplicationRecord
       end
       export
     end
+
 
     def precinct_results_export
       formatted_hash = []
