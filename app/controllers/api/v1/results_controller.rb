@@ -10,7 +10,7 @@ module Api
         if @office.name == 'US President'
           render json: @state.candidates.distinct.where(candidates: { office_id: @office.id })
         else
-          render json: {data: [@state.candidate_images(@office)] }
+          render json: @state.candidate_images(@office)
         end
       end
 

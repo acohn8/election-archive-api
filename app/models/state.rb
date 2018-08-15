@@ -66,21 +66,22 @@ class State < ApplicationRecord
 
     def candidate_images(office)
       formatted_hash = []
-      to_render = {}
-      top_three = results.includes(:candidate).where(candidates: {office_id: office.id}).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..2].map{|k, v| k }
-      top_candidates = Candidate.find([top_three]).to_a
-      url = "https://en.wikipedia.org/w/api.php?action=query&prop=imageinfo&iiprop=url&generator=images&titles=United States Senate election in #{self.name}, 2016&format=json"
-      response = HTTParty.get(url)
+      top_candidates = candidates.distinct.where(candidates: { office_id: office.id }).to_a
+      senate_url = "https://en.wikipedia.org/w/api.php?action=query&prop=imageinfo&iiprop=url&generator=images&titles=United States Senate election in #{self.name}, 2016&format=json"
+      governor_url =  "https://en.wikipedia.org/w/api.php?action=query&prop=imageinfo&iiprop=url&generator=images&titles=#{self.name} gubernatorial election, 2016&format=json"
+      response = office.name == 'US Senate' ? HTTParty.get(senate_url) : HTTParty.get(governor_url)
       data = response['query']['pages']
       image_keys = data.keys
       top_candidates.each do |candidate|
         candidate_info = image_keys.find { |k| data[k]['title'].downcase.include?(candidate.normalized_name) }
-        candidate_image = data[candidate_info]['imageinfo'][0]['url']
-        formatted_hash << { id: candidate.id, type:'candidates', attributes: { name: candidate.name, party: candidate.party, normalized_name: candidate.normalized_name, image: candidate_image } }
+        if candidate_info.nil?
+          formatted_hash << { id: candidate.id, type:'candidates', attributes: { name: candidate.name, party: candidate.party, 'normalized-name': candidate.normalized_name, image: nil } }
+        else
+          candidate_image = data[candidate_info]['imageinfo'][0]['url'].nil? ? candidate.image : data[candidate_info]['imageinfo'][0]['url']
+          formatted_hash << { id: candidate.id, type:'candidates', attributes: { name: candidate.name, party: candidate.party, 'normalized-name': candidate.normalized_name, image: candidate_image.to_s } }
+        end
       end
-      # formatted_hash.each { |h| to_render[h] ||= h }
-      # to_render
-      formatted_hash
+      { data: formatted_hash }
     end
 
     # export routes work, but not live
