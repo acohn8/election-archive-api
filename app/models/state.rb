@@ -66,7 +66,7 @@ class State < ApplicationRecord
 
     def candidate_images(office)
       formatted_hash = []
-      top_candidates = candidates.distinct.where(candidates: { office_id: office.id }).to_a
+      top_candidates = candidates.distinct.where(candidates: { office_id: office.id }).where.not(candidates: { name: nil }).to_a
       senate_url = "https://en.wikipedia.org/w/api.php?action=query&prop=imageinfo&iiprop=url&generator=images&titles=United States Senate election in #{self.name}, 2016&format=json"
       governor_url =  "https://en.wikipedia.org/w/api.php?action=query&prop=imageinfo&iiprop=url&generator=images&titles=#{self.name} gubernatorial election, 2016&format=json"
       response = office.name == 'US Senate' ? HTTParty.get(senate_url) : HTTParty.get(governor_url)
@@ -78,7 +78,7 @@ class State < ApplicationRecord
           formatted_hash << { id: candidate.id, type:'candidates', attributes: { name: candidate.name, party: candidate.party, 'normalized-name': candidate.normalized_name, image: nil } }
         else
           candidate_image = data[candidate_info]['imageinfo'][0]['url'].nil? ? candidate.image : data[candidate_info]['imageinfo'][0]['url']
-          formatted_hash << { id: candidate.id, type:'candidates', attributes: { name: candidate.name, party: candidate.party, 'normalized-name': candidate.normalized_name, image: candidate_image.to_s } }
+          formatted_hash << { id: candidate.id, type:'candidates', attributes: { name: candidate.name, party: candidate.party, 'normalized-name': candidate.normalized_name, image: candidate_image } }
         end
       end
       { data: formatted_hash }
