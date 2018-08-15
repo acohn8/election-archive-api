@@ -75,9 +75,9 @@ class State < ApplicationRecord
       top_candidates.each do |candidate|
         candidate_info = image_keys.find { |k| data[k]['title'].downcase.include?(candidate.normalized_name) }
         if candidate_info.nil?
-          formatted_hash << { id: candidate.id, type:'candidates', attributes: { name: candidate.name, party: candidate.party, 'normalized-name': candidate.normalized_name, image: nil } }
+          formatted_hash << { id: candidate.id, type:'candidates', attributes: { name: candidate.name, party: candidate.party, 'normalized-name': candidate.normalized_name, image: candidate.image } }
         else
-          candidate_image = data[candidate_info]['imageinfo'][0]['url'].nil? ? candidate.image : data[candidate_info]['imageinfo'][0]['url']
+          candidate_image = data[candidate_info]['imageinfo'][0]['url']
           formatted_hash << { id: candidate.id, type:'candidates', attributes: { name: candidate.name, party: candidate.party, 'normalized-name': candidate.normalized_name, image: candidate_image } }
         end
       end
