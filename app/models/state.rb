@@ -49,7 +49,7 @@ class State < ApplicationRecord
     def render_state_precint_results(office)
       formatted_hash = []
       top_three = results.includes(:candidate).where(candidates: {office_id: office.id}).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..2].map{|k, v| k }
-      candidate_results = results.includes(:county, :candidate).where(candidates: {office_id: office.id})
+      candidate_results = results.includes(:precinct, :candidate).where(candidates: {office_id: office.id})
       major_results = candidate_results.where(candidate_id: top_three).order('precincts.id').group(['precincts.id', 'candidates.id']).sum(:total)
       other_results = candidate_results.where.not(candidate_id: top_three).order('precincts.id').group('precincts.id').sum(:total)
       precinct_results = major_results.reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
