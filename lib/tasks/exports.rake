@@ -78,61 +78,86 @@ namespace :exports do
 
   desc "exports county results with fips for mapping"
   task geo_export_county: :environment do
-    formatted_hash = []
-    Office.find(313).states.distinct.to_a.each do |state|
-      top_candidates = state.results.includes(:candidate).where(candidates: { office_id: 313 }).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..3].map{|k, v| k }
-      candidate_results = state.results.includes(:county, :candidate).where(candidates: {office_id: 313})
-      major_results = candidate_results.where(candidate_id: top_candidates).order('counties.id').group(['counties.id', 'candidates.id']).sum(:total)
-      county_results = major_results.reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
-      state_counties = state.counties.distinct.to_a
-      state_candidates = state.candidates.distinct.to_a
-      puts state.name
-      county_results.keys.each do |county_id|
-        county = state_counties.find { |c| c.id == county_id }
-        candidate_totals = county_results[county_id].transform_keys { |k| state_candidates.find { |c| c.id == k }.party }
-        county_total = candidate_results.select { |r| r.county_id == county_id }.map(&:total).inject(&:+)
-        if !candidate_totals['democratic'].nil? && !candidate_totals['republican'].nil?
-          dem_margin = (candidate_totals['democratic'] / county_total.to_f) - (candidate_totals['republican'] / county_total.to_f)
-          formatted_hash << { GEOID: county.fips.to_s.rjust(5, '0'), state_id: state.id, state_fips: state.fips.to_s.rjust(2, '0'), dem_margin: dem_margin, dem_votes: candidate_totals['democratic'], gop_votes: candidate_totals['republican'] }
-        elsif candidate_totals['democratic'].nil? && !candidate_totals['republican'].nil?
-          dem_margin = -1
-          formatted_hash << { GEOID: county.fips.to_s.rjust(5, '0'), state_id: state.id, state_fips: state.fips.to_s.rjust(2, '0'), dem_margin: dem_margin, dem_votes: 0, gop_votes: candidate_totals['republican'] }
-        elsif !candidate_totals['democratic'].nil? && candidate_totals['republican'].nil?
-          dem_margin = 1
-          formatted_hash << { GEOID: county.fips.to_s.rjust(5, '0'), state_id: state.id, state_fips: state.fips.to_s.rjust(2, '0'), dem_margin: dem_margin, dem_votes: candidate_totals['democratic'], gop_votes: 0 }
+    Office.find([308, 309, 313]).each do |office|
+      formatted_hash = []
+      office.states.distinct.to_a.each do |state|
+        puts "#{state.name}, #{office.name}"
+        top_candidates = state.results.includes(:candidate).where(candidates: { office_id: office.id }).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..1].map{|k, v| k }
+        candidate_results = state.results.includes(:county, :candidate).where(candidates: {office_id: office.id})
+        major_results = candidate_results.where(candidate_id: top_candidates).order('counties.id').group(['counties.id', 'candidates.id']).sum(:total)
+        county_results = major_results.reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
+        state_counties = state.counties.distinct.to_a
+        state_candidates = state.candidates.distinct.to_a
+        winner = state_candidates.find {|c| c.id == top_candidates[0] }
+        second = state_candidates.find {|c| c.id == top_candidates[1] }
+        county_results.keys.each do |county_id|
+          county = state_counties.find { |c| c.id == county_id }
+          candidate_totals = county_results[county_id]
+          party_totals = candidate_totals.transform_keys { |k| state_candidates.find { |c| c.id == k }.party }
+          county_total = candidate_results.select { |r| r.county_id == county_id }.map(&:total).inject(&:+)
+          countyInfo = {}
+          countyInfo[:GEOID] ||= county.fips.to_s.rjust(5, '0')
+          countyInfo[:winner_name] ||= winner.name
+          countyInfo[:winner_party] ||= winner.party
+          countyInfo[:winner_votes] ||= candidate_totals[winner.id]
+          countyInfo[:winner_margin] ||= candidate_totals[winner.id].to_f / county_total.to_f
+          countyInfo[:second_name] ||= second.name
+          countyInfo[:second_party] ||= second.party
+          countyInfo[:second_votes] ||= candidate_totals[second.id]
+          countyInfo[:second_margin] ||= candidate_totals[second.id].to_f / county_total.to_f
+          if !party_totals['democratic'].nil? && !party_totals['republican'].nil?
+            countyInfo[:dem_margin] = (party_totals['democratic'] / county_total.to_f) - (party_totals['republican'] / county_total.to_f)
+          elsif party_totals['democratic'].nil? && !party_totals['republican'].nil?
+            countyInfo[:dem_margin] = -1
+          elsif !party_totals['democratic'].nil? && party_totals['republican'].nil?
+            countyInfo[:dem_margin] = 1
+          end
+          formatted_hash << countyInfo
         end
       end
-    end
-    CSV.open("./exports/governor-county-results.csv", "wb") do |csv|
-      csv << formatted_hash.first.keys
-      formatted_hash.each do |county|
-        csv << county.values
+      CSV.open("./exports/#{office.name.split(' ').join('-')}-county-results.csv", "wb") do |csv|
+        csv << formatted_hash.first.keys
+        formatted_hash.each do |county|
+          csv << county.values
+        end
       end
     end
   end
 
   desc "exports state results with fips for mapping"
   task geo_export_state: :environment do
-    formatted_hash = []
-    Office.find(308).states.distinct.to_a.each do |state|
-      puts state.name
-      top_candidates = state.results.includes(:candidate).where(candidates: { office_id: 308 }).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..3].map{|k, v| k }
-      candidate_results = state.results.includes(:candidate).where(candidates: {office_id: 308})
-      major_results = candidate_results.where(candidate_id: top_candidates).group('candidates.id').sum(:total)
-      state_candidates = state.candidates.distinct.to_a
-      candidate_totals = major_results.transform_keys { |k| state_candidates.find { |c| c.id == k }.party }
-      state_total = candidate_results.map(&:total).inject(&:+)
-      if !candidate_totals['democratic'].nil? && !candidate_totals['republican'].nil?
-        dem_margin = (candidate_totals['democratic'] / state_total.to_f) - (candidate_totals['republican'] / state_total.to_f)
-        formatted_hash << { STATEFP: state.fips.to_s.rjust(2, '0'), dem_margin: dem_margin, dem_votes: candidate_totals['democratic'], gop_votes: candidate_totals['republican'] }
-      elsif candidate_totals['democratic'].nil? && !candidate_totals['republican'].nil?
-        dem_margin = -1
-        formatted_hash << { STATEFP: state.fips.to_s.rjust(2, '0'), dem_margin: dem_margin, dem_votes: 0, gop_votes: candidate_totals['republican'] }
-      elsif !candidate_totals['democratic'].nil? && candidate_totals['republican'].nil?
-        dem_margin = 1
-        formatted_hash << { STATEFP: state.fips.to_s.rjust(2, '0'), dem_margin: dem_margin, dem_votes: candidate_totals['democratic'], gop_votes: 0 }
+    Office.all.each do |office|
+      formatted_hash = []
+      office.states.distinct.to_a.each do |state|
+        puts "#{state.name}, #{office.name}"
+        top_candidates = state.results.includes(:candidate).where(candidates: { office_id: office.id }).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..1].map{|k, v| k }
+        candidate_results = state.results.includes(:candidate).where(candidates: {office_id: office.id})
+        major_results = candidate_results.where(candidate_id: top_candidates).group('candidates.id').sum(:total)
+        state_candidates = state.candidates.distinct.where(candidates: {office_id: office.id }).to_a
+        candidate_totals = major_results.transform_keys { |k| state_candidates.find { |c| c.id == k }.party }
+        state_total = candidate_results.map(&:total).inject(&:+)
+        winner = state_candidates.find {|c| c.id == top_candidates[0] }
+        second = state_candidates.find {|c| c.id == top_candidates[1] }
+        state_info = {}
+        state_info[:STATEFP] ||= state.fips.to_s.rjust(2, '0')
+        state_info[:winner_name] ||= winner.name
+        state_info[:winner_party] ||= winner.party
+        state_info[:winner_votes] ||= major_results[winner.id]
+        state_info[:winner_margin] ||= major_results[winner.id].to_f / state_total.to_f
+        state_info[:second_name] ||= second.name
+        state_info[:second_party] ||= second.party
+        state_info[:second_votes] ||= major_results[second.id]
+        state_info[:second_margin] ||= major_results[second.id].to_f / state_total.to_f
+        if !candidate_totals['democratic'].nil? && !candidate_totals['republican'].nil?
+          state_info[:dem_margin] = (candidate_totals['democratic'] / state_total.to_f) - (candidate_totals['republican'] / state_total.to_f)
+        elsif candidate_totals['democratic'].nil? && !candidate_totals['republican'].nil?
+          state_info[:dem_margin] = -1
+        elsif !candidate_totals['democratic'].nil? && candidate_totals['republican'].nil?
+          state_info[:dem_margin] = 1
+        end
+        formatted_hash << state_info
       end
-      CSV.open("./exports/president-state-results.csv", "wb") do |csv|
+      CSV.open("./exports/#{office.name.split(' ').join('-')}-state-results.csv", "wb") do |csv|
         csv << formatted_hash.first.keys
         formatted_hash.each do |county|
           csv << county.values
@@ -141,3 +166,26 @@ namespace :exports do
     end
   end
 end
+# if !candidate_totals['democratic'].nil? && !candidate_totals['republican'].nil?
+#   gop_id = top_candidates.find { |k| candidate_results.find { |r| r.candidate_id == k && r.candidate.party == 'republican'} }
+#   democrat_id = top_candidates.find { |k| candidate_results.find { |r| r.candidate_id == k && r.candidate.party == 'democratic'} }
+#   democrat_name = candidate_results.find { |r| r.candidate_id = democrat_id }.candidate.name
+#   gop_name = candidate_results.find { |r| r.candidate_id = gop_id }.candidate.name
+#   dem_margin = (candidate_totals['democratic'] / state_total.to_f) - (candidate_totals['republican'] / state_total.to_f)
+#   gop_margin = (candidate_totals['republican'] / state_total.to_f) - (candidate_totals['democratic'] / state_total.to_f)
+#   formatted_hash << { STATEFP: state.fips.to_s.rjust(2, '0'), democrat_name: democrat_name, dem_margin: dem_margin, dem_votes: candidate_totals['democratic'], gop_name: gop_name,  gop_margin: gop_margin, gop_votes: candidate_totals['republican'] }
+# elsif candidate_totals['democratic'].nil? && !candidate_totals['republican'].nil?
+#   gop_id = top_candidates.find { |k| candidate_results.find { |r| r.candidate_id == k && r.candidate.party == 'republican'} }
+#   gop_name = candidate_results.find { |r| r.candidate_id = gop_id }.candidate.name
+#   democrat_name = 'No candidate'
+#   gop_margin = 1
+#   dem_margin = -1
+#   formatted_hash << { STATEFP: state.fips.to_s.rjust(2, '0'), democrat_name: democrat_name, dem_margin: dem_margin, dem_votes: 0, gop_name: gop_name, gop_margin: gop_margin, gop_votes: candidate_totals['republican'] }
+# elsif !candidate_totals['democratic'].nil? && candidate_totals['republican'].nil?
+#   democrat_id = top_candidates.find { |k| candidate_results.find { |r| r.candidate_id == k && r.candidate.party == 'republican'} }
+#   democrat_name = candidate_results.find { |r| r.candidate_id = democrat_id }.candidate.name
+#   gop_name = 'No candidate'
+#   dem_margin = 1
+#   gop_margin -1
+#   formatted_hash << { STATEFP: state.fips.to_s.rjust(2, '0'), democrat_name: democrat_name, dem_margin: dem_margin, dem_votes: 0, gop_name: gop_name, gop_margin: gop_margin, gop_votes: 0 }
+# end
