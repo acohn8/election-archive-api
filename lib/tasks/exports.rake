@@ -77,12 +77,12 @@ namespace :exports do
   end
 
   desc "exports county results with fips for mapping"
-  task geo_export: :environment do
+  task geo_export_county: :environment do
     formatted_hash = []
-    Office.find(309).states.distinct.to_a.each do |state|
-      top_two = state.results.includes(:candidate).where(candidates: { office_id: 309 }).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..3].map{|k, v| k }
-      candidate_results = state.results.includes(:county, :candidate).where(candidates: {office_id: 309})
-      major_results = candidate_results.where(candidate_id: top_two).order('counties.id').group(['counties.id', 'candidates.id']).sum(:total)
+    Office.find(313).states.distinct.to_a.each do |state|
+      top_candidates = state.results.includes(:candidate).where(candidates: { office_id: 313 }).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..3].map{|k, v| k }
+      candidate_results = state.results.includes(:county, :candidate).where(candidates: {office_id: 313})
+      major_results = candidate_results.where(candidate_id: top_candidates).order('counties.id').group(['counties.id', 'candidates.id']).sum(:total)
       county_results = major_results.reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
       state_counties = state.counties.distinct.to_a
       state_candidates = state.candidates.distinct.to_a
@@ -103,10 +103,40 @@ namespace :exports do
         end
       end
     end
-    CSV.open("./exports/senate-results", "wb") do |csv|
+    CSV.open("./exports/governor-county-results.csv", "wb") do |csv|
       csv << formatted_hash.first.keys
       formatted_hash.each do |county|
         csv << county.values
+      end
+    end
+  end
+
+  desc "exports state results with fips for mapping"
+  task geo_export_state: :environment do
+    formatted_hash = []
+    Office.find(308).states.distinct.to_a.each do |state|
+      puts state.name
+      top_candidates = state.results.includes(:candidate).where(candidates: { office_id: 308 }).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..3].map{|k, v| k }
+      candidate_results = state.results.includes(:candidate).where(candidates: {office_id: 308})
+      major_results = candidate_results.where(candidate_id: top_candidates).group('candidates.id').sum(:total)
+      state_candidates = state.candidates.distinct.to_a
+      candidate_totals = major_results.transform_keys { |k| state_candidates.find { |c| c.id == k }.party }
+      state_total = candidate_results.map(&:total).inject(&:+)
+      if !candidate_totals['democratic'].nil? && !candidate_totals['republican'].nil?
+        dem_margin = (candidate_totals['democratic'] / state_total.to_f) - (candidate_totals['republican'] / state_total.to_f)
+        formatted_hash << { STATEFP: state.fips.to_s.rjust(2, '0'), dem_margin: dem_margin, dem_votes: candidate_totals['democratic'], gop_votes: candidate_totals['republican'] }
+      elsif candidate_totals['democratic'].nil? && !candidate_totals['republican'].nil?
+        dem_margin = -1
+        formatted_hash << { STATEFP: state.fips.to_s.rjust(2, '0'), dem_margin: dem_margin, dem_votes: 0, gop_votes: candidate_totals['republican'] }
+      elsif !candidate_totals['democratic'].nil? && candidate_totals['republican'].nil?
+        dem_margin = 1
+        formatted_hash << { STATEFP: state.fips.to_s.rjust(2, '0'), dem_margin: dem_margin, dem_votes: candidate_totals['democratic'], gop_votes: 0 }
+      end
+      CSV.open("./exports/president-state-results.csv", "wb") do |csv|
+        csv << formatted_hash.first.keys
+        formatted_hash.each do |county|
+          csv << county.values
+        end
       end
     end
   end

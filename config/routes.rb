@@ -9,6 +9,7 @@ Rails.application.routes.draw do
         resources :candidates
       end
       get '/offices', to: 'offices#all_offices'
+      get '/offices/:office_id', to: 'offices#show'
       get 'states/:state_id/offices/:office_id/candidates', to: 'results#office_candidates'
       get 'states/:state_id/offices/:office_id/results/state', to: 'results#state_results'
       get 'states/:state_id/offices/:office_id/results/county', to: 'results#county_results'

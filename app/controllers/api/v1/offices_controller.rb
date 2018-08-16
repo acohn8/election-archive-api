@@ -7,7 +7,7 @@ module Api
       end
 
       def show
-        @office = Office.find(params['id'])
+        @office = Office.find(params['office_id'])
         render json: @office
       end
 
