@@ -166,26 +166,3 @@ namespace :exports do
     end
   end
 end
-# if !candidate_totals['democratic'].nil? && !candidate_totals['republican'].nil?
-#   gop_id = top_candidates.find { |k| candidate_results.find { |r| r.candidate_id == k && r.candidate.party == 'republican'} }
-#   democrat_id = top_candidates.find { |k| candidate_results.find { |r| r.candidate_id == k && r.candidate.party == 'democratic'} }
-#   democrat_name = candidate_results.find { |r| r.candidate_id = democrat_id }.candidate.name
-#   gop_name = candidate_results.find { |r| r.candidate_id = gop_id }.candidate.name
-#   dem_margin = (candidate_totals['democratic'] / state_total.to_f) - (candidate_totals['republican'] / state_total.to_f)
-#   gop_margin = (candidate_totals['republican'] / state_total.to_f) - (candidate_totals['democratic'] / state_total.to_f)
-#   formatted_hash << { STATEFP: state.fips.to_s.rjust(2, '0'), democrat_name: democrat_name, dem_margin: dem_margin, dem_votes: candidate_totals['democratic'], gop_name: gop_name,  gop_margin: gop_margin, gop_votes: candidate_totals['republican'] }
-# elsif candidate_totals['democratic'].nil? && !candidate_totals['republican'].nil?
-#   gop_id = top_candidates.find { |k| candidate_results.find { |r| r.candidate_id == k && r.candidate.party == 'republican'} }
-#   gop_name = candidate_results.find { |r| r.candidate_id = gop_id }.candidate.name
-#   democrat_name = 'No candidate'
-#   gop_margin = 1
-#   dem_margin = -1
-#   formatted_hash << { STATEFP: state.fips.to_s.rjust(2, '0'), democrat_name: democrat_name, dem_margin: dem_margin, dem_votes: 0, gop_name: gop_name, gop_margin: gop_margin, gop_votes: candidate_totals['republican'] }
-# elsif !candidate_totals['democratic'].nil? && candidate_totals['republican'].nil?
-#   democrat_id = top_candidates.find { |k| candidate_results.find { |r| r.candidate_id == k && r.candidate.party == 'republican'} }
-#   democrat_name = candidate_results.find { |r| r.candidate_id = democrat_id }.candidate.name
-#   gop_name = 'No candidate'
-#   dem_margin = 1
-#   gop_margin -1
-#   formatted_hash << { STATEFP: state.fips.to_s.rjust(2, '0'), democrat_name: democrat_name, dem_margin: dem_margin, dem_votes: 0, gop_name: gop_name, gop_margin: gop_margin, gop_votes: 0 }
-# end
