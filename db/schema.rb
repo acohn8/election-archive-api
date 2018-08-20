@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_08_16_013130) do
+ActiveRecord::Schema.define(version: 2018_08_20_191229) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -29,6 +29,7 @@ ActiveRecord::Schema.define(version: 2018_08_16_013130) do
     t.datetime "updated_at", null: false
     t.string "image"
     t.integer "office_id"
+    t.integer "district_id"
   end
 
   create_table "counties", force: :cascade do |t|
@@ -41,9 +42,14 @@ ActiveRecord::Schema.define(version: 2018_08_16_013130) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "districts", force: :cascade do |t|
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "offices", force: :cascade do |t|
     t.string "name"
-    t.string "district"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "state_map"
@@ -64,6 +70,15 @@ ActiveRecord::Schema.define(version: 2018_08_16_013130) do
     t.integer "precinct_id"
     t.integer "county_id"
     t.integer "state_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "district_id"
+    t.integer "office_id"
+  end
+
+  create_table "state_offices", force: :cascade do |t|
+    t.integer "state_id"
+    t.integer "office_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end

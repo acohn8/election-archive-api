@@ -2,9 +2,11 @@ require 'httparty'
 
 class State < ApplicationRecord
   has_many :counties
+  has_many :state_offices
   has_many :results
   has_many :candidates, through: :results
-  has_many :offices, through: :candidates
+  has_many :offices, through: :state_offices
+  has_many :districts, through: :offices
   has_many :precincts, through: :counties
 
   def self.render
@@ -62,7 +64,25 @@ class State < ApplicationRecord
       { results: formatted_hash }
     end
 
-
+    def render_state_congressional_district_results(office)
+      formatted_hash = []
+      districts = office.districts.includes(:candidate).where(candidates: {office_id: office.id})
+      byebug
+      top_three = results.includes(:candidate).where(candidates: { office_id: office.id }).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..2].map{|k, v| k }
+      candidate_results = results.includes(:county, :candidate).where(candidates: {office_id: office.id})
+      major_results = candidate_results.where(candidate_id: top_three).order('counties.id').group(['counties.id', 'candidates.id']).sum(:total)
+      other_results = candidate_results.where.not(candidate_id: top_three).order('counties.id').group('counties.id').sum(:total)
+      county_results = major_results.reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
+      other_results.delete_if { |k, v| !county_results.include?(k) }
+      county_results.keys.each do |county_id|
+        if other_results.values.inject(0) { |sum, n| sum + n } > 0
+          county_results[county_id] ||= [:other]
+          county_results[county_id][:other] ||= other_results[county_id].to_i
+        end
+        formatted_hash <<  Hash[id: county_id, fips: counties.find { |c| c.id == county_id }.fips.to_s, results: county_results[county_id]]
+      end
+      { results: formatted_hash }
+    end
 
     def candidate_images(office)
       formatted_hash = []

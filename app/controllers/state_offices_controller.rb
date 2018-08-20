@@ -1,0 +1,2 @@
+class StateOfficesController < ApplicationController
+end
