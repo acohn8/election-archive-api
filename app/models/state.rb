@@ -2,12 +2,11 @@ require 'httparty'
 
 class State < ApplicationRecord
   has_many :counties
-  has_many :state_offices
+  has_many :precincts, through: :counties
   has_many :results
   has_many :candidates, through: :results
-  has_many :offices, through: :state_offices
-  has_many :districts, through: :offices
-  has_many :precincts, through: :counties
+  has_many :offices, through: :results
+  has_many :districts, through: :results
 
   def self.render
     State.all.map do |state|
@@ -21,45 +20,51 @@ class State < ApplicationRecord
     end
 
     def render_state_results(office)
-      top_three = results.includes(:candidate).where(candidates: { office_id: office.id }).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..2].map{|k, v| k }
-      candidate_results = results.includes(:candidate).where(candidates: { office_id: office.id })
-      major_results = candidate_results.where(candidate_id: top_three).group('candidates.id').sum(:total)
-      other_results = candidate_results.where.not(candidate_id: top_three).group('candidates.id').sum(:total)
-      other_results.delete_if { |k, v| !major_results.include?(k) }
-      major_results[:other] ||= other_results.values.inject(0) { |sum, n| sum + n}
-      { id: id, results: major_results }
+      candidate_results = Result.where(state_id: id, office_id: office.id).group('candidate_id').sum(:total).to_h
+      top_three = candidate_results.sort{|a,b| a[1]<=>b[1]}.reverse[0..2].to_h
+      total_votes = candidate_results.values.inject(&:+)
+      other_votes = total_votes - top_three.values.inject(&:+)
+      candidates = Candidate.find(top_three.keys).to_a
+      state_results = {}
+      state_results[:id] ||= id
+      state_results[:results] ||= top_three
+      state_results[:results] ||= 'other'
+      state_results[:results][:other] ||= other_votes
+      state_results
     end
 
     def render_state_county_results(office)
       formatted_hash = []
-      top_three = results.includes(:candidate).where(candidates: { office_id: office.id }).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..2].map{|k, v| k }
-      candidate_results = results.includes(:county, :candidate).where(candidates: {office_id: office.id})
-      major_results = candidate_results.where(candidate_id: top_three).order('counties.id').group(['counties.id', 'candidates.id']).sum(:total)
-      other_results = candidate_results.where.not(candidate_id: top_three).order('counties.id').group('counties.id').sum(:total)
-      county_results = major_results.reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
-      other_results.delete_if { |k, v| !county_results.include?(k) }
-      county_results.keys.each do |county_id|
-        if other_results.values.inject(0) { |sum, n| sum + n } > 0
-          county_results[county_id] ||= [:other]
-          county_results[county_id][:other] ||= other_results[county_id].to_i
-        end
-        formatted_hash <<  Hash[id: county_id, fips: counties.find { |c| c.id == county_id }.fips.to_s, results: county_results[county_id]]
+      statewide_total = Hash.new(0)
+      candidate_results = Result.where(state_id: id, office_id: office.id).group(['county_id', 'candidate_id']).sum(:total).reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
+      candidate_results.keys.each do |county_id|
+        candidate_results[county_id].each { |k, v| statewide_total[k] += v}
+      end
+      top_three = statewide_total.sort{|a,b| a[1]<=>b[1]}.reverse[0..2].to_h
+      state_counties = counties.to_a
+      candidate_results.keys.each do |county_id|
+        county_results = candidate_results[county_id].select { |k, v| top_three.keys.include?(k) }
+        other_county_results = candidate_results[county_id].select { |k, v| !top_three.keys.include?(k) }.values.inject(&:+)
+        county_results[:other] ||= other_county_results
+        formatted_hash << {id: county_id, fips: state_counties.find { |c| c.id == county_id}.fips.to_s, results: county_results }
       end
       { results: formatted_hash }
     end
 
     def render_state_precint_results(office)
       formatted_hash = []
-      top_three = results.includes(:candidate).where(candidates: {office_id: office.id}).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..2].map{|k, v| k }
-      candidate_results = results.includes(:precinct, :candidate).where(candidates: {office_id: office.id})
-      major_results = candidate_results.where(candidate_id: top_three).order('precincts.id').group(['precincts.id', 'candidates.id']).sum(:total)
-      other_results = candidate_results.where.not(candidate_id: top_three).order('precincts.id').group('precincts.id').sum(:total)
-      precinct_results = major_results.reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
-      other_results.delete_if { |k, v| !precinct_results.include?(k) }
-      precinct_results.keys.each do |precinct_id|
-        precinct_results[precinct_id] ||= [:other]
-        precinct_results[precinct_id][:other] ||= other_results[precinct_id].to_i
-        formatted_hash << Hash[id: precinct_id, county_id: candidate_results.find { |p| p.precinct_id == precinct_id }.county_id, results: precinct_results[precinct_id]]
+      statewide_total = Hash.new(0)
+      candidate_results = Result.where(state_id: id, office_id: office.id).group(['precinct_id', 'candidate_id']).sum(:total).reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
+      candidate_results.keys.each do |precinct_id|
+        candidate_results[precinct_id].each { |k, v| statewide_total[k] += v}
+      end
+      top_three = statewide_total.sort{|a,b| a[1]<=>b[1]}.reverse[0..2].to_h
+      state_precincts = precincts.to_a
+      candidate_results.keys.each do |precinct_id|
+        precinct_results = candidate_results[precinct_id].select { |k, v| top_three.keys.include?(k) }
+        other_precinct_results = candidate_results[precinct_id].select { |k, v| !top_three.keys.include?(k) }.values.inject(&:+)
+        precinct_results[:other] ||= other_precinct_results
+        formatted_hash << {id: precinct_id, fips: state_precincts.find { |c| c.id == precinct_id}.fips.to_s, results: precinct_results }
       end
       { results: formatted_hash }
     end
@@ -67,7 +72,6 @@ class State < ApplicationRecord
     def render_state_congressional_district_results(office)
       formatted_hash = []
       districts = office.districts.includes(:candidate).where(candidates: {office_id: office.id})
-      byebug
       top_three = results.includes(:candidate).where(candidates: { office_id: office.id }).group('candidates.id').sum(:total).sort{|a,b| a[1]<=>b[1]}.reverse[0..2].map{|k, v| k }
       candidate_results = results.includes(:county, :candidate).where(candidates: {office_id: office.id})
       major_results = candidate_results.where(candidate_id: top_three).order('counties.id').group(['counties.id', 'candidates.id']).sum(:total)
@@ -103,6 +107,13 @@ class State < ApplicationRecord
       end
       { data: formatted_hash }
     end
+
+    def get_campaign_finance_data()
+      response = HTTParty.get('https://api.propublica.org/campaign-finance/v1/2016/candidates/P80001571', headers: "X-API-Key: PROPUBLICA_API_KEY")
+      puts response
+      response
+    end
+
 
     # export routes work, but not live
     def county_results_export

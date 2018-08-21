@@ -4,6 +4,6 @@ class Candidate < ApplicationRecord
   has_many :states, through: :results
   has_many :counties, through: :results
   has_many :precincts, through: :results
-  belongs_to :office
-  belongs_to :district
+  has_many :offices, through: :results
+  has_many :districts, through: :results
 end

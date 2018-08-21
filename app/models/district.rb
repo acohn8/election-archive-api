@@ -1,6 +1,8 @@
 class District < ApplicationRecord
-  has_many :offices
-  has_many :candidates
-  has_many :offices, through: :candidates
-  has_many :states, through: :offices
+  has_many :results
+  has_many :offices, through: :results
+  has_many :candidates, through: :results
+  has_many :states, through: :results
+  has_many :counties, through: :results
+  has_many :precincts, through: :results
 end

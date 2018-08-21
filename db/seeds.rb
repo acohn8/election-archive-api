@@ -38,7 +38,7 @@ end
 seed_state
 
 Candidate.all.each do |candidate|
-    candidate.results.each do |result|
+    candidate.results.where(office_id: nil).each do |result|
       result.office_id = candidate.office_id
       result.district_id = candidate.district_id
       result.save

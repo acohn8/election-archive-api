@@ -1,9 +1,10 @@
 class County < ApplicationRecord
   belongs_to :state
+  has_many :precincts
   has_many :results
   has_many :candidates, through: :results
-  has_many :offices, through: :candidates
-  has_many :precincts
+  has_many :offices, through: :results
+  has_many :districts, through: :results
 
   def render_county_precint_results(office)
     formatted_hash = []
