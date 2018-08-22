@@ -18,6 +18,7 @@ class County < ApplicationRecord
     candidate_results.keys.each do |precinct_id|
       precinct_results = candidate_results[precinct_id].select { |k, v| top_three.keys.include?(k) }
       other_precinct_results = candidate_results[precinct_id].select { |k, v| !top_three.keys.include?(k) }.values.inject(&:+)
+      other_precinct_results = 0 if other_precinct_results.nil?
       precinct_results[:other] ||= other_precinct_results
       formatted_hash << { id: precinct_id, name: county_precincts.find { |p| p.id == precinct_id }.name, results: precinct_results }
     end

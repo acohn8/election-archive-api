@@ -54,6 +54,7 @@ class State < ApplicationRecord
         precinct_results = candidate_results[precinct_id].select { |k, v| top_three.keys.include?(k) }
         other_precinct_results = candidate_results[precinct_id].select { |k, v| !top_three.keys.include?(k) }.values.inject(&:+)
         precinct_results[:other] ||= other_precinct_results
+        other_precinct_results = 0 if other_precinct_results.nil?
         formatted_hash << { id: precinct_id, fips: state_precincts.find { |c| c.id == precinct_id}.fips.to_s, results: precinct_results }
       end
       { results: formatted_hash }
