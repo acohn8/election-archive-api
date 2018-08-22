@@ -22,7 +22,7 @@ module Api
       def county_results
         @state = State.find(params['state_id'])
         @office = Office.find(params['office_id'])
-        if @office.name == 'US House'
+      if @staoffice.name == 'US House'
           render json: @state.render_state_district_results(@office)
         else
           render json: @state.render_state_county_results(@office)

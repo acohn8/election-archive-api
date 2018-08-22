@@ -3,7 +3,7 @@ module Api
     class OfficesController < ApplicationController
       def index
         @state = State.find(params['state_id'])
-        render json: @state.offices.distinct.where(offices: { id: [309, 313, 308, 322] })
+        render json: @state.offices
       end
 
       def show
