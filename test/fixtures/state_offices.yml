@@ -1,9 +1,0 @@
-# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
-
-one:
-  state_id: 1
-  office_id: 1
-
-two:
-  state_id: 1
-  office_id: 1

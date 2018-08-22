@@ -22,10 +22,18 @@ class State < ApplicationRecord
       state_results
     end
 
-    def render_state_county_results(office)
+    def filter_county_results(office, district)
+      if district == nil
+        return Result.where(state_id: id, office_id: office.id).group([:county_id, :candidate_id]).sum(:total).reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
+      else
+        Result.where(state_id: id, office_id: office.id, district_id: district.id).group([:county_id, :candidate_id]).sum(:total).reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
+      end
+    end
+
+    def render_state_county_results(office, district = nil)
       formatted_hash = []
       statewide_total = Hash.new(0)
-      candidate_results = Result.where(state_id: id, office_id: office.id).group([:county_id, :candidate_id]).sum(:total).reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
+      candidate_results = filter_county_results(office, district)
       candidate_results.keys.each do |county_id|
         candidate_results[county_id].each { |k, v| statewide_total[k] += v}
       end
@@ -36,7 +44,7 @@ class State < ApplicationRecord
         other_county_results = candidate_results[county_id].select { |k, v| !top_three.keys.include?(k) }.values.inject(&:+)
         other_county_results = 0 if other_county_results.nil?
         county_results[:other] ||= other_county_results
-        formatted_hash << {id: county_id, fips: state_counties.find { |c| c.id == county_id}.fips.to_s, results: county_results }
+        formatted_hash << {id: county_id, fips: state_counties.find { |c| c.id == county_id}.fips.to_s, name: state_counties.find { |c| c.id == county_id}.name, results: county_results }
       end
       { results: formatted_hash }
     end
