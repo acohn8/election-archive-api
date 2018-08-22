@@ -1,3 +1,3 @@
 class DistrictSerializer < ActiveModel::Serializer
-  attributes :id, :name, :office_id
+  attributes :id, :name
 end

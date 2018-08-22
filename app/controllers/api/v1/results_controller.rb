@@ -1,5 +1,3 @@
-require 'csv'
-
 module Api
   module V1
     class ResultsController < ApplicationController
@@ -24,14 +22,14 @@ module Api
       def county_results
         @state = State.find(params['state_id'])
         @office = Office.find(params['office_id'])
-        render json: @state.render_state_county_results(@office)
+        if @office.name == 'US House'
+          render json: @state.render_state_district_results(@office)
+        else
+          render json: @state.render_state_county_results(@office)
       end
+    end
 
-      def congressional_district_results
-        @state = State.find(params['state_id'])
-        @office = Office.find(params['office_id'])
-        render json: @state.render_state_congressional_district_results(@office)
-      end
+
 
       def precinct_results
         @county = County.find(params['county_id'])

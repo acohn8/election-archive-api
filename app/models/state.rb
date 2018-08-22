@@ -4,9 +4,9 @@ class State < ApplicationRecord
   has_many :counties
   has_many :precincts, through: :counties
   has_many :results
-  has_many :candidates, through: :results
-  has_many :offices, through: :results
-  has_many :districts, through: :results
+  has_many :candidates, -> { distinct }, through: :results
+  has_many :offices, -> { distinct }, through: :results
+  has_many :districts, -> { distinct }, through: :results
 
     def render_state_results(office)
       candidate_results = Result.where(state_id: id, office_id: office.id).group(:candidate_id).sum(:total)
@@ -56,6 +56,23 @@ class State < ApplicationRecord
         precinct_results[:other] ||= other_precinct_results
         other_precinct_results = 0 if other_precinct_results.nil?
         formatted_hash << { id: precinct_id, fips: state_precincts.find { |c| c.id == precinct_id}.fips.to_s, results: precinct_results }
+      end
+      { results: formatted_hash }
+    end
+
+    def render_state_district_results(office)
+      formatted_hash = []
+      candidate_results = Result.where(state_id: id, office_id: office.id).group([:district_id, :candidate_id]).sum(:total).reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
+      sorted_district_results = {}
+      candidate_results.each do |district, votes|
+        sorted_votes = votes.sort{|a,b| a[1]<=>b[1]}.reverse[0..2].to_h
+        other_votes = votes.values.inject(&:+) - sorted_votes.values.inject(&:+)
+        sorted_votes[:other] ||= other_votes
+        sorted_district_results[district] ||= votes.sort{|a,b| a[1]<=>b[1]}.reverse[0..2].to_h
+      end
+      state_districts = districts.to_a
+      sorted_district_results.keys.each do |district_id|
+        formatted_hash << {id: district_id, name: state_districts.find { |c| c.id == district_id}.name, results: sorted_district_results[district_id] }
       end
       { results: formatted_hash }
     end
