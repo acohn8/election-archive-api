@@ -8,7 +8,8 @@ module Api
         @state = State.find(params['state_id'])
         @office = Office.find(params['office_id'])
         if @office.name == 'US President' || @office.name == 'US House'
-          render json: @state.candidates.distinct.where(candidates: { office_id: @office.id })
+          candidates = @state.results.where(office_id: @office.id).pluck(:candidate_id).uniq
+          render json: Candidate.find(candidates)
         else
           render json: @state.candidate_images(@office)
         end
