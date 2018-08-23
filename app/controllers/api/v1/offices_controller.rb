@@ -3,7 +3,13 @@ module Api
     class OfficesController < ApplicationController
       def index
         @state = State.find(params['state_id'])
-        render json: @state.offices
+        state_offices = @state.offices.to_a
+        offices_with_districts = []
+        state_offices.each do |office|
+          districts = Result.where(state_id: @state.id, office_id: office.id).pluck(:district_id).uniq
+          offices_with_districts << { id: office.id.to_s, name: office.name, state_map: office.state_map, county_map: office.county_map, districts: District.where(id: districts) }
+        end
+        render json: offices_with_districts
       end
 
       def show

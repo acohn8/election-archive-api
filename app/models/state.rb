@@ -8,8 +8,16 @@ class State < ApplicationRecord
   has_many :offices, -> { distinct }, through: :results
   has_many :districts, -> { distinct }, through: :results
 
-    def render_state_results(office)
-      candidate_results = Result.where(state_id: id, office_id: office.id).group(:candidate_id).sum(:total)
+  def filter_state_results(office, district)
+    if district == nil
+      return Result.where(state_id: id, office_id: office.id).group(:candidate_id).sum(:total)
+    else
+      return Result.where(state_id: id, office_id: office.id, district_id: district.id).group(:candidate_id).sum(:total)
+    end
+  end
+
+    def render_state_results(office, district = nil)
+      candidate_results = filter_state_results(office, district)
       top_three = candidate_results.sort{|a,b| a[1]<=>b[1]}.reverse[0..2].to_h
       total_votes = candidate_results.values.inject(&:+)
       other_votes = total_votes - top_three.values.inject(&:+)
@@ -64,23 +72,6 @@ class State < ApplicationRecord
         precinct_results[:other] ||= other_precinct_results
         other_precinct_results = 0 if other_precinct_results.nil?
         formatted_hash << { id: precinct_id, fips: state_precincts.find { |c| c.id == precinct_id}.fips.to_s, results: precinct_results }
-      end
-      { results: formatted_hash }
-    end
-
-    def render_state_district_results(office)
-      formatted_hash = []
-      candidate_results = Result.where(state_id: id, office_id: office.id).group([:district_id, :candidate_id]).sum(:total).reduce({}){|v, (k, x)| v.merge!(k[0] => {k[1] => x}){|_, o, n| o.merge!(n)}}
-      sorted_district_results = {}
-      candidate_results.each do |district, votes|
-        sorted_votes = votes.sort{|a,b| a[1]<=>b[1]}.reverse[0..2].to_h
-        other_votes = votes.values.inject(&:+) - sorted_votes.values.inject(&:+)
-        sorted_votes[:other] ||= other_votes
-        sorted_district_results[district] ||= votes.sort{|a,b| a[1]<=>b[1]}.reverse[0..2].to_h
-      end
-      state_districts = districts.to_a
-      sorted_district_results.keys.each do |district_id|
-        formatted_hash << {id: district_id, name: state_districts.find { |c| c.id == district_id}.name, results: sorted_district_results[district_id] }
       end
       { results: formatted_hash }
     end

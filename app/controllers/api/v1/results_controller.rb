@@ -19,22 +19,25 @@ module Api
         render json: @state.render_state_results(@office)
       end
 
+      def district_results
+        @state = State.find(params['state_id'])
+        @office = Office.find(params['office_id'])
+        @district = District.find(params['district_id'])
+        render json: @state.render_state_results(@office, @district)
+      end
+
       def county_results
         @state = State.find(params['state_id'])
         @office = Office.find(params['office_id'])
-      if @staoffice.name == 'US House'
-          render json: @state.render_state_district_results(@office)
-        else
-          render json: @state.render_state_county_results(@office)
+        render json: @state.render_state_county_results(@office)
       end
-    end
 
-  def congressional_district_results
-    @state = State.find(params['state_id'])
-    @office = Office.find(params['office_id'])
-    @district = District.find(params['district_id'])
-    render json: @state.render_state_county_results(@office, @district)
-  end
+      def congressional_district_results
+        @state = State.find(params['state_id'])
+        @office = Office.find(params['office_id'])
+        @district = District.find(params['district_id'])
+        render json: @state.render_state_county_results(@office, @district)
+      end
 
       def precinct_results
         @county = County.find(params['county_id'])
