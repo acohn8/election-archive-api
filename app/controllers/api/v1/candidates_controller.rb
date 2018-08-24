@@ -7,8 +7,8 @@ module Api
       end
 
       def campaign_finance
-        @candidate = Candidate.find(params['candidate_id'])
-        render json: @candidate.get_campaign_finance_data
+        @candidates = Candidate.find(params['candidate_id'].split(','))
+        render json: Candidate.get_campaign_finance_data(@candidates)
       end
     end
   end
