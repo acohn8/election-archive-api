@@ -54,7 +54,7 @@ class State < ApplicationRecord
       county_results[:other] ||= other_county_results
       formatted_hash << {id: county_id, fips: state_counties.find { |c| c.id == county_id}.fips.to_s, name: state_counties.find { |c| c.id == county_id}.name, results: county_results }
     end
-    { results: formatted_hash }
+    { results: formatted_hash.sort { |a,b| a[:name] <=> b[:name] } }
   end
 
   def render_state_precint_results(office)
