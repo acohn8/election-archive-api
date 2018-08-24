@@ -21,8 +21,8 @@ class State < ApplicationRecord
       top_three = candidate_results.sort{|a,b| a[1]<=>b[1]}.reverse[0..2].to_h
       total_votes = candidate_results.values.inject(&:+)
       other_votes = total_votes - top_three.values.inject(&:+)
-      candidates = Candidate.find(top_three.keys).to_a
       state_results = {}
+      state_results[:name] ||= district.nil? ? office.name : district.name
       state_results[:id] ||= id
       state_results[:results] ||= top_three
       state_results[:results] ||= 'other'
@@ -95,11 +95,5 @@ class State < ApplicationRecord
         end
       end
       { data: formatted_hash }
-    end
-
-    def get_campaign_finance_data()
-      response = HTTParty.get('https://api.propublica.org/campaign-finance/v1/2016/candidates/P80001571', headers: "X-API-Key: PROPUBLICA_API_KEY")
-      puts response
-      response
     end
   end

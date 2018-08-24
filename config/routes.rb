@@ -12,7 +12,7 @@ Rails.application.routes.draw do
       get '/offices', to: 'offices#all_offices'
       get '/offices/:office_id', to: 'offices#show'
       get 'states/:state_id/offices/:office_id/results/district/:district_id/county', to: 'results#congressional_district_results'
-      get 'states/:state_id/offices/:office_id/campaign-finance', to: 'offices#campaign_finance'
+      get 'candidates/campaign-finance/:candidate_id', to: 'candidates#campaign_finance'
       get 'states/:state_id/offices/:office_id/candidates', to: 'results#office_candidates'
       get 'states/:state_id/offices/:office_id/results/state', to: 'results#state_results'
       get 'states/:state_id/offices/:office_id/results/district/:district_id', to: 'results#district_results'
