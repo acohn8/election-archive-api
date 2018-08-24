@@ -17,12 +17,14 @@ require 'csv'
 #HI Kalawao county does not admin elections, but needs a dummy line in the db with a fips of 15005 and a dummy result
 
 #find candidates wiht the same name and office: Candidate.select(:office_id,:normalized_name).group(:office_id,:normalized_name).having("count(*) > 1").size
+#fl-24
 def seed_state
-  states = ['wi', 'wy']
+  states = ['sc']
   states.each do |state|
     data = CSV.open("/Users/adamcohn/Documents/development/projects/election_data/precinct-returns/source/2016-#{state}-precinct.csv", headers: :first_row, encoding: 'iso-8859-1:utf-8').map(&:to_h)
     filtered_data = data.select{ |row| row['office'] == 'US House'}
-    filtered_data.each do |row|
+    hd = filtered_data.select { |row| row['district'] == '1'}
+    hd.each do |row|
       puts "#{row['state_postal']}-#{row['district'].to_s.rjust(2, '0')}"
       state = State.find_or_create_by(name: row['state'], short_name: row['state_postal'], fips: row['state_fips'])
       office = Office.find_or_create_by(name: 'US House')
