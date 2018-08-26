@@ -10,9 +10,9 @@ class State < ApplicationRecord
 
   def filter_state_results(office, district)
     if district == nil
-      return Result.where(state_id: id, office_id: office.id).group(:candidate_id).sum(:total)
+      return office.results.where(results: { state_id: id }).group(:candidate_id).sum(:total)
     else
-      return Result.where(state_id: id, office_id: office.id, district_id: district.id).group(:candidate_id).sum(:total)
+      return office.results.where(results: { state_id: id, district_id: district.id }).group(:candidate_id).sum(:total)
     end
   end
 
@@ -22,7 +22,10 @@ class State < ApplicationRecord
     total_votes = candidate_results.values.inject(&:+)
     other_votes = total_votes - top_three.values.inject(&:+)
     state_results = {}
-    state_results[:name] ||= district.nil? ? office.name : district.name
+    state_results[:name] ||= name
+    state_results[:fips] ||= fips.to_s.rjust(2, '0')
+    state_results[:short_name] ||= short_name
+    state_results[:office_name] ||= district.nil? ? office.name : district.name
     state_results[:id] ||= id
     state_results[:results] ||= top_three
     state_results[:results] ||= 'other'

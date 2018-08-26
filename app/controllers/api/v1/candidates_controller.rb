@@ -3,7 +3,7 @@ module Api
     class CandidatesController < ApplicationController
       def index
         @state = State.find(params['state_id'])
-        render json: @state.candidates.order('id').distinct
+        render json: @state.candidates.order('id')
       end
 
       def campaign_finance

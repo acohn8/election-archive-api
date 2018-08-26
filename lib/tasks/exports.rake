@@ -78,7 +78,7 @@ namespace :exports do
 
   desc "exports county results with fips for mapping"
   task geo_export_county: :environment do
-    Office.find([308, 309, 313]).each do |office|
+    Office.all.where.not(id: 322).each do |office|
       formatted_hash = []
       office.states.distinct.to_a.each do |state|
         puts "#{state.name}, #{office.name}"
@@ -126,7 +126,7 @@ namespace :exports do
 
   desc "exports state results with fips for mapping"
   task geo_export_state: :environment do
-    Office.all.each do |office|
+    Office.all.where.not(id: 322).each do |office|
       formatted_hash = []
       office.states.distinct.to_a.each do |state|
         puts "#{state.name}, #{office.name}"
@@ -162,6 +162,71 @@ namespace :exports do
         formatted_hash.each do |county|
           csv << county.values
         end
+      end
+    end
+  end
+
+  desc "exports congressional results with fips for mapping"
+  task geo_export_congressional: :environment do
+    formatted_hash = []
+    to_check = []
+    State.all.each do |state|
+      state_districts = state.districts.joins(:offices).where(offices: { id: 322 }).to_a
+      state_districts.each do |district|
+        puts district.name
+        results = district.results.group(:candidate_id).sum(:total)
+        top_candidates = results.sort{|a,b| a[1]<=>b[1]}.reverse[0..1].map{|k, v| k }
+        top_results = {}
+        top_candidates.each {|id| top_results[id] ||= results[id] }
+        district_total = results.values.inject(&:+)
+        candidates = district.candidates.to_a
+        winner = candidates.find {|c| c.id == top_candidates[0] }
+        second = candidates.find {|c| c.id == top_candidates[1] }
+        party_totals = {}
+        if !second.nil?
+          party_totals = top_results.transform_keys { |k| candidates.find { |c| c.id == k }.party}
+        else
+          party_totals[winner.party] ||= top_results[winner.id]
+        end
+        district_info = {}
+        district_info[:GEOID] ||= "#{state.fips.to_s.rjust(2, '0')}#{district.name.split('-').last}"
+        district_info[:NAME] ||= district.name
+        district_info[:id] ||= district.id
+        district_info[:winner_name] ||= winner.name
+        district_info[:winner_party] ||= winner.party
+        district_info[:winner_votes] ||= results[winner.id]
+        district_info[:winner_margin] ||= results[winner.id].to_f / district_total.to_f
+        !second.nil? ? district_info[:second_name] ||= second.name : district_info[:second_name] ||= 'UNOPPOSED'
+        !second.nil? ? district_info[:second_party] ||= second.party : district_info[:second_party] ||= 'N/A'
+        !second.nil? ? district_info[:second_votes] ||= results[second.id] : district_info[:second_votes] ||= 0
+        !second.nil? ? district_info[:second_margin] ||= results[second.id].to_f / district_total.to_f : district_info[:second_margin] ||= 0.0
+        if !party_totals['democratic'].nil? && !party_totals['republican'].nil?
+          district_info[:dem_margin] = (party_totals['democratic'] / district_total.to_f) - (party_totals['republican'] / district_total.to_f)
+        elsif party_totals['democratic'].nil? && !party_totals['republican'].nil?
+          district_info[:dem_margin] = -1
+          second_name = !second.nil? ? second.name : nil
+          second_party =  !second.nil? ? second.party : nil
+          to_check << { name: district.name, winner: winner.name, winner_party: winner.party, second_name: second_name, second_party: second_party }
+          to_check << { name: district.name }
+        elsif !party_totals['democratic'].nil? && party_totals['republican'].nil?
+          district_info[:dem_margin] = 1
+          second_name = !second.nil? ? second.name : nil
+          second_party =  !second.nil? ? second.party : nil
+          to_check << { name: district.name, winner: winner.name, winner_party: winner.party, second_name: second_name, second_party: second_party }
+        end
+        formatted_hash << district_info
+      end
+    end
+    CSV.open("./exports/house-results.csv", "wb") do |csv|
+      csv << formatted_hash.first.keys
+      formatted_hash.each do |county|
+        csv << county.values
+      end
+    end
+    CSV.open("./exports/to-check.csv", "wb") do |csv|
+      csv << to_check.first.keys
+      to_check.each do |county|
+        csv << county.values
       end
     end
   end

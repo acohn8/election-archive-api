@@ -3,7 +3,7 @@ module Api
     class CountiesController < ApplicationController
       def index
           @state = State.find(params['state_id'])
-          render json: { state: @state, counties: @state.counties }
+          render json: @state.counties
       end
     end
   end
