@@ -217,6 +217,9 @@ namespace :exports do
         formatted_hash << district_info
       end
     end
+    formatted_hash << { GEOID: '1224', name: 'FL-24', id: 0, winner_name: 'Frederica Wilson', winner_party: 'democratic', winner_votes: 100, winner_margin: 1, second_name: 'UNOPPOSED', second_party: 'N/A', second_votes: 0, second_margin: 0, dem_margin: 1 }
+    formatted_hash << { GEOID: '4001', name: 'OK-01', id: 0, winner_name: 'Jim Bridenstine', winner_party: 'republican', winner_votes: 100, winner_margin: 1, second_name: 'UNOPPOSED', second_party: 'N/A', second_votes: 0, second_margin: 0, dem_margin: -1 }
+    formatted_hash << { GEOID: '4808', name: 'TX-08', id: 0, winner_name: 'Kevin Brady', winner_party: 'republican', winner_votes: 100, winner_margin: 1, second_name: 'UNOPPOSED', second_party: 'N/A', second_votes: 0, second_margin: 0, dem_margin: -1 }
     CSV.open("./exports/house-results.csv", "wb") do |csv|
       csv << formatted_hash.first.keys
       formatted_hash.each do |county|

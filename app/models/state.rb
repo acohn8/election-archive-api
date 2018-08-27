@@ -55,7 +55,8 @@ class State < ApplicationRecord
       other_county_results = candidate_results[county_id].select { |k, v| !top_three.keys.include?(k) }.values.inject(&:+)
       other_county_results = 0 if other_county_results.nil?
       county_results[:other] ||= other_county_results
-      formatted_hash << {id: county_id, fips: state_counties.find { |c| c.id == county_id}.fips.to_s, name: state_counties.find { |c| c.id == county_id}.name, results: county_results }
+      name = state_counties.find { |c| c.id == county_id}.name
+      formatted_hash << {id: county_id, fips: state_counties.find { |c| c.id == county_id}.fips.to_s, name: name, results: county_results } if !name.nil?
     end
     { results: formatted_hash.sort { |a,b| a[:name] <=> b[:name] } }
   end
