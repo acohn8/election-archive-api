@@ -100,4 +100,6 @@ class State < ApplicationRecord
     end
     { data: formatted_hash }
   end
+
+
 end

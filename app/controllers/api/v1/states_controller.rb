@@ -4,6 +4,11 @@ module Api
       def index
         render json: State.all.order('name')
       end
+
+      def show
+        @state = State.find(params['id'])
+        render json: @state
+      end
     end
   end
 end
