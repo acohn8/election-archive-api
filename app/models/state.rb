@@ -19,11 +19,11 @@ class State < ApplicationRecord
   def get_candidate_info(candidates)
     candidate_info = []
     candidates.each do |candidate|
-      candidate_attributes = candidate.as_json
+      candidate_attributes = candidate.serializable_hash()
       candidate_attributes[:finance_data] = candidate.get_campaign_finance_data
       candidate_info << candidate_attributes
     end
-    other = { id: 0,  name: 'Other'}
+    other = { id: 'other',  name: 'Other', party: 'other'}
     candidate_info << other
   end
 
@@ -35,15 +35,12 @@ class State < ApplicationRecord
     office_candidates = Candidate.find(top_two.keys).to_a
     candidate_info = get_candidate_info(office_candidates)
     state_results = {}
-    state_results[:name] ||= name
-    state_results[:fips] ||= fips.to_s.rjust(2, '0')
-    state_results[:short_name] ||= short_name
     state_results[:office_name] ||= district.nil? ? office.name : district.name
     state_results[:id] ||= id
     state_results[:candidates] ||= candidate_info
+    state_results[:office] ||= office
     state_results[:results] ||= top_two
-    state_results[:results] ||= 'other'
-    state_results[:results][:other] ||= other_votes
+    state_results[:results][0] ||= other_votes
     state_results
   end
 
