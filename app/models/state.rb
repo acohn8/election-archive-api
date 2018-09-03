@@ -16,18 +16,32 @@ class State < ApplicationRecord
     end
   end
 
+  def get_candidate_info(candidates)
+    candidate_info = []
+    candidates.each do |candidate|
+      candidate_attributes = candidate.as_json
+      candidate_attributes[:finance_data] = candidate.get_campaign_finance_data
+      candidate_info << candidate_attributes
+    end
+    other = { id: 0,  name: 'Other'}
+    candidate_info << other
+  end
+
   def render_state_results(office, district = nil)
     candidate_results = filter_state_results(office, district)
-    top_three = candidate_results.sort{|a,b| a[1]<=>b[1]}.reverse[0..2].to_h
+    top_two = candidate_results.sort{|a,b| a[1]<=>b[1]}.reverse[0..1].to_h
     total_votes = candidate_results.values.inject(&:+)
-    other_votes = total_votes - top_three.values.inject(&:+)
+    other_votes = total_votes - top_two.values.inject(&:+)
+    office_candidates = Candidate.find(top_two.keys).to_a
+    candidate_info = get_candidate_info(office_candidates)
     state_results = {}
     state_results[:name] ||= name
     state_results[:fips] ||= fips.to_s.rjust(2, '0')
     state_results[:short_name] ||= short_name
     state_results[:office_name] ||= district.nil? ? office.name : district.name
     state_results[:id] ||= id
-    state_results[:results] ||= top_three
+    state_results[:candidates] ||= candidate_info
+    state_results[:results] ||= top_two
     state_results[:results] ||= 'other'
     state_results[:results][:other] ||= other_votes
     state_results
@@ -48,11 +62,11 @@ class State < ApplicationRecord
     candidate_results.keys.each do |county_id|
       candidate_results[county_id].each { |k, v| statewide_total[k] += v}
     end
-    top_three = statewide_total.sort{|a,b| a[1]<=>b[1]}.reverse[0..2].to_h
+    top_two = statewide_total.sort{|a,b| a[1]<=>b[1]}.reverse[0..1].to_h
     state_counties = counties.to_a
     candidate_results.keys.each do |county_id|
-      county_results = candidate_results[county_id].select { |k, v| top_three.keys.include?(k) }
-      other_county_results = candidate_results[county_id].select { |k, v| !top_three.keys.include?(k) }.values.inject(&:+)
+      county_results = candidate_results[county_id].select { |k, v| top_two.keys.include?(k) }
+      other_county_results = candidate_results[county_id].select { |k, v| !top_two.keys.include?(k) }.values.inject(&:+)
       other_county_results = 0 if other_county_results.nil?
       county_results[:other] ||= other_county_results
       name = state_counties.find { |c| c.id == county_id}.name
@@ -68,11 +82,11 @@ class State < ApplicationRecord
     candidate_results.keys.each do |precinct_id|
       candidate_results[precinct_id].each { |k, v| statewide_total[k] += v}
     end
-    top_three = statewide_total.sort{|a,b| a[1]<=>b[1]}.reverse[0..2].to_h
+    top_two = statewide_total.sort{|a,b| a[1]<=>b[1]}.reverse[0..1].to_h
     state_precincts = precincts.to_a
     candidate_results.keys.each do |precinct_id|
-      precinct_results = candidate_results[precinct_id].select { |k, v| top_three.keys.include?(k) }
-      other_precinct_results = candidate_results[precinct_id].select { |k, v| !top_three.keys.include?(k) }.values.inject(&:+)
+      precinct_results = candidate_results[precinct_id].select { |k, v| top_two.keys.include?(k) }
+      other_precinct_results = candidate_results[precinct_id].select { |k, v| !top_two.keys.include?(k) }.values.inject(&:+)
       precinct_results[:other] ||= other_precinct_results
       other_precinct_results = 0 if other_precinct_results.nil?
       formatted_hash << { id: precinct_id, fips: state_precincts.find { |c| c.id == precinct_id}.fips.to_s, results: precinct_results }
