@@ -22,7 +22,7 @@ module Api
       def district_results
         @state = State.find(params['state_id'])
         @office = Office.find(params['office_id'])
-        @district = District.find(params['district_id'])
+        @district = District.find_by(name: params[:district_id].upcase)
         render json: @state.render_state_results(@office, @district)
       end
 
@@ -35,7 +35,7 @@ module Api
       def congressional_district_results
         @state = State.find(params['state_id'])
         @office = Office.find(params['office_id'])
-        @district = District.find(params['district_id'])
+        @district = District.find_by(name: params[:district_id].upcase)
         render json: @state.render_state_county_results(@office, @district)
       end
 
