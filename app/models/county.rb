@@ -24,4 +24,30 @@ class County < ApplicationRecord
     end
     { results: formatted_hash }
   end
+
+  def county_info
+    details_url = "https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles=#{name}, #{state.name}&format=json"
+    details = HTTParty.get(details_url)
+    page_key = details['query']['pages'].keys[0]
+    county_summary = details['query']['pages'][page_key]['extract']
+    images = get_county_images
+    to_render = {}
+    to_render[:id] = id
+    to_render[:name] = name
+    !county_summary.nil? ? to_render[:details] = county_summary : to_render[:details] = nil
+    !images.nil? ? to_render[:images] = images : to_render[:images] = []
+    to_render
+  end
+
+  def get_county_images
+    images_url = "https://en.wikipedia.org/w/api.php?action=query&prop=imageinfo&iiprop=url&generator=images&titles=#{name}, #{state.name}&format=json"
+    images = HTTParty.get(images_url)
+    image_keys = images['query']['pages'].keys
+    image_keys.map do |key|
+      image_info = {}
+      image_info[:url] = images['query']['pages'][key]['imageinfo'][0]['url']
+      image_info[:title] = images['query']['pages'][key]['title']
+      image_info
+    end
+  end
 end
