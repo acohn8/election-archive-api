@@ -11,6 +11,7 @@ Rails.application.routes.draw do
       end
       get '/offices', to: 'offices#all_offices'
       get '/offices/:office_id', to: 'offices#show'
+      get 'states/:state_id/offices/:office_id/results/district/:district_id/precinct/:county_id', to: 'results#render_county_district_precint_results'
       get 'states/:state_id/offices/:office_id/results/district/:district_id/county', to: 'results#congressional_district_results'
       get 'candidates/campaign-finance/:candidate_id', to: 'candidates#campaign_finance'
       get 'states/:state_id/offices/:office_id/candidates', to: 'results#office_candidates'
