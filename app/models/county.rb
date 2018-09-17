@@ -58,7 +58,7 @@ class County < ApplicationRecord
     details = HTTParty.get(details_url)
     page_key = details['query']['pages'].keys[0]
     county_summary = details['query']['pages'][page_key]['extract']
-    # images = get_county_images
+    images = get_county_images
     to_render = {}
     to_render[:id] = id
     to_render[:name] = name
@@ -67,19 +67,20 @@ class County < ApplicationRecord
     to_render[:latitude] = latitude
     to_render[:longitude] = longitude
     !county_summary.nil? ? to_render[:details] = county_summary : to_render[:details] = nil
-    # !images.nil? ? to_render[:images] = images : to_render[:images] = []
+    !images.nil? ? to_render[:images] = images : to_render[:images] = []
     to_render
   end
 
-  # def get_county_images
-  #   images_url = "https://en.wikipedia.org/w/api.php?action=query&prop=imageinfo&iiprop=url&generator=images&titles=#{name}, #{state.name}&format=json"
-  #   images = HTTParty.get(images_url)
-  #   image_keys = images['query']['pages'].keys
-  #   image_keys.map do |key|
-  #     image_info = {}
-  #     image_info[:url] = images['query']['pages'][key]['imageinfo'][0]['url']
-  #     image_info[:title] = images['query']['pages'][key]['title']
-  #     image_info
-  #   end
-  # end
+  def get_county_images
+    images_url = "https://en.wikipedia.org/w/api.php?action=query&prop=imageinfo&iiprop=url&generator=images&titles=#{name}, #{state.name}&format=json"
+    images = HTTParty.get(images_url)
+    image_keys = images['query']['pages'].keys
+    images = image_keys.map do |key|
+      image_info = {}
+      image_info[:url] = images['query']['pages'][key]['imageinfo'][0]['url']
+      image_info[:title] = images['query']['pages'][key]['title']
+      image_info
+    end
+    images.select { |img| !img[:url].include?('svg') }
+  end
 end
