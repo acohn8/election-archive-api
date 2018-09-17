@@ -34,14 +34,32 @@ class State < ApplicationRecord
     other_votes = total_votes - top_two.values.inject(&:+)
     office_candidates = Candidate.find(top_two.keys).to_a
     candidate_info = get_candidate_info(office_candidates)
+    overview = get_race_overview(office.name)
     state_results = {}
     state_results[:office_name] ||= district.nil? ? office.name : district.name
     state_results[:id] ||= id
     state_results[:candidates] ||= candidate_info
     state_results[:office] ||= office
+    state_results[:overview] ||= !overview.nil? ? overview : nil
     state_results[:results] ||= top_two
     state_results[:results][0] ||= other_votes
+    state_results = state_results.as_json
+    state_results['office']['overview'] ||= !overview.nil? ? overview : nil
     state_results
+  end
+
+  def get_race_overview(office)
+    formatted_office = office.split(' ').map(&:downcase).join('_').to_sym
+    links = {
+      'us_president': "United_States_presidential_election_in_#{name},_2016",
+      'us_senate': 'United_States_Senate_election_in_#{name},_2016',
+      'us_house': 'United_States_House_of_Representatives_elections_in_#{name},_2016'
+    }
+    details_url = "https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles=#{links[formatted_office]}&format=json"
+    details = HTTParty.get(details_url)
+    page_key = details['query']['pages'].keys[0]
+    race_summary = details['query']['pages'][page_key]['extract']
+    race_summary
   end
 
   def filter_county_results(office, district)

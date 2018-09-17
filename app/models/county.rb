@@ -66,6 +66,7 @@ class County < ApplicationRecord
     to_render[:latitude] = latitude
     to_render[:latitude] = latitude
     to_render[:longitude] = longitude
+    !county_summary.nil? ? to_render[:url] = "https://en.wikipedia.org/wiki/#{name}, #{state.name}" : to_render[:url] = nil
     !county_summary.nil? ? to_render[:details] = county_summary : to_render[:details] = nil
     !images.nil? ? to_render[:images] = images : to_render[:images] = []
     to_render
