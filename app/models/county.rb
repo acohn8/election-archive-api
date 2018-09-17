@@ -83,9 +83,9 @@ class County < ApplicationRecord
         image_info[:title] = images['query']['pages'][key]['title']
         image_info
       end
-      images.select { |img| !img[:url].include?('svg') }
+      return images.select { |img| !img[:url].include?('svg') }
+    else
+      return nil
     end
-  else
-    nil
   end
 end
