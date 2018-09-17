@@ -75,13 +75,17 @@ class County < ApplicationRecord
   def get_county_images
     images_url = "https://en.wikipedia.org/w/api.php?action=query&prop=imageinfo&iiprop=url&generator=images&redirects=1&titles=#{name}, #{state.name}&format=json"
     images = HTTParty.get(images_url)
-    image_keys = images['query']['pages'].keys
-    images = image_keys.map do |key|
-      image_info = {}
-      image_info[:url] = images['query']['pages'][key]['imageinfo'][0]['url']
-      image_info[:title] = images['query']['pages'][key]['title']
-      image_info
+    if !images['query'].nil?
+      image_keys = images['query']['pages'].keys
+      images = image_keys.map do |key|
+        image_info = {}
+        image_info[:url] = images['query']['pages'][key]['imageinfo'][0]['url']
+        image_info[:title] = images['query']['pages'][key]['title']
+        image_info
+      end
+      images.select { |img| !img[:url].include?('svg') }
     end
-    images.select { |img| !img[:url].include?('svg') }
+  else
+    nil
   end
 end
