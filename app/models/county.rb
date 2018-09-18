@@ -54,7 +54,8 @@ class County < ApplicationRecord
   end
 
   def county_info
-    details_url = "https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles=#{name}, #{state.name}&format=json"
+    formatted_name = "#{name}, #{state.name}".split(' ').join('_')
+    details_url = "https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles=#{formatted_name}&format=json"
     details = HTTParty.get(details_url)
     page_key = details['query']['pages'].keys[0]
     county_summary = details['query']['pages'][page_key]['extract']
@@ -73,7 +74,8 @@ class County < ApplicationRecord
   end
 
   def get_county_images
-    images_url = "https://en.wikipedia.org/w/api.php?action=query&prop=imageinfo&iiprop=url&generator=images&redirects=1&titles=#{name}, #{state.name}&format=json"
+    formatted_name = "#{name}, #{state.name}".split(' ').join('_')
+    images_url = "https://en.wikipedia.org/w/api.php?action=query&prop=imageinfo&iiprop=url&generator=images&redirects=1&titles=#{formatted_name}&format=json"
     images = HTTParty.get(images_url)
     if !images['query'].nil?
       image_keys = images['query']['pages'].keys
