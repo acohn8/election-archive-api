@@ -53,7 +53,8 @@ class State < ApplicationRecord
     links = {
       us_president: "United_States_presidential_election_in_#{name},_2016",
       us_senate: "United_States_Senate_election_in_#{name},_2016",
-      us_house: "United_States_House_of_Representatives_elections_in_#{name},_2016"
+      us_house: "United_States_House_of_Representatives_elections_in_#{name},_2016",
+      governor: "#{name}_gubernatorial_election,_2016"
     }
     details_url = "https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles=#{links[formatted_office]}&format=json"
     details = HTTParty.get(details_url)
